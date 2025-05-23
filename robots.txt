@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://robotnosignal.ca/sitemap.xml
