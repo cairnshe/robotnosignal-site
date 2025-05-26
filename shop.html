@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shop - Robot No Signal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+    img { max-width: 200px; display: block; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Our Products</h1>
+  <div id="product-list">Loading products...</div>
+
+  <script>
+    fetch('/products.json')
+      .then(response => response.json())
+      .then(products => {
+        const list = document.getElementById('product-list');
+        list.innerHTML = '';
+
+        products.forEach(product => {
+          const item = document.createElement('div');
+          item.className = 'product';
+          item.innerHTML = `
+            <h2>${product.name}</h2>
+            <img src="${product.image}" alt="${product.name}" />
+            <p><strong>Price:</strong> $${product.price}</p>
+            <p>${product.description}</p>
+            <p><strong>Seller:</strong> ${product.seller.name}</p>
+          `;
+          list.appendChild(item);
+        });
+      })
+      .catch(error => {
+        document.getElementById('product-list').innerText = 'Failed to load products.';
+        console.error('Error loading products.json:', error);
+      });
+  </script>
+</body>
+</html>
