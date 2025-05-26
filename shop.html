@@ -8,36 +8,91 @@
     body { font-family: Arial, sans-serif; padding: 2rem; }
     .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
     img { max-width: 200px; display: block; margin-bottom: 1rem; }
+    .countdown { font-weight: bold; color: red; }
   </style>
 </head>
 <body>
   <h1>Our Products</h1>
   <div id="product-list">Loading products...</div>
 
-  <script>
-    fetch('/products.json')
-      .then(response => response.json())
-      .then(products => {
-        const list = document.getElementById('product-list');
+  <!-- Firebase SDK 初始化 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbrc6FV024PCp9SDlJ_-Y5QpbxdqvTYJI",
+      authDomain: "robot-no-signal.firebaseapp.com",
+      projectId: "robot-no-signal",
+      storageBucket: "robot-no-signal.firebasestorage.app",
+      messagingSenderId: "485194816357",
+      appId: "1:485194816357:web:fc33550bd299927266df8c",
+      measurementId: "G-QQRM0D4RB9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const list = document.getElementById('product-list');
+
+    async function loadProducts() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
         list.innerHTML = '';
 
-        products.forEach(product => {
+        querySnapshot.forEach((doc) => {
+          const product = doc.data();
+          const endsAt = product.ends_at?.seconds * 1000 || null;
+          const now = Date.now();
+          const timeLeft = endsAt ? endsAt - now : null;
+
           const item = document.createElement('div');
           item.className = 'product';
+
           item.innerHTML = `
             <h2>${product.name}</h2>
-            <img src="${product.image}" alt="${product.name}" />
+            <img src="${product.image_url}" alt="${product.name}" />
             <p><strong>Price:</strong> $${product.price}</p>
             <p>${product.description}</p>
-            <p><strong>Seller:</strong> ${product.seller.name}</p>
+            <p><strong>Seller:</strong> ${product.seller_name}</p>
+            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${doc.id}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
           `;
+
           list.appendChild(item);
+
+          if (endsAt) {
+            startCountdown(`cd-${doc.id}`, endsAt);
+          }
         });
-      })
-      .catch(error => {
-        document.getElementById('product-list').innerText = 'Failed to load products.';
-        console.error('Error loading products.json:', error);
-      });
+      } catch (error) {
+        console.error('Error loading products:', error);
+        list.innerText = 'Failed to load products.';
+      }
+    }
+
+    function formatCountdown(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function startCountdown(elementId, endTime) {
+      const el = document.getElementById(elementId);
+      const timer = setInterval(() => {
+        const now = Date.now();
+        const diff = endTime - now;
+        if (diff <= 0) {
+          clearInterval(timer);
+          el.innerText = 'Expired';
+        } else {
+          el.innerText = formatCountdown(diff);
+        }
+      }, 1000);
+    }
+
+    loadProducts();
   </script>
 </body>
 </html>
