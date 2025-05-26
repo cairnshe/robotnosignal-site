@@ -15,23 +15,10 @@
   <h1>Our Products</h1>
   <div id="product-list">Loading products...</div>
 
-  <!-- Firebase SDK 初始化 -->
+  <!-- Firebase SDK 模块加载 -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDbrc6FV024PCp9SDlJ_-Y5QpbxdqvTYJI",
-      authDomain: "robot-no-signal.firebaseapp.com",
-      projectId: "robot-no-signal",
-      storageBucket: "robot-no-signal.firebasestorage.app",
-      messagingSenderId: "485194816357",
-      appId: "1:485194816357:web:fc33550bd299927266df8c",
-      measurementId: "G-QQRM0D4RB9"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from './firebase-config.js';
 
     const list = document.getElementById('product-list');
 
