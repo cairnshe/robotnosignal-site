@@ -3,129 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop - Robot No Signal</title>
+  <title>Ongoing Auctions - Robot No Signal</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 2rem; }
     .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
     img { max-width: 200px; display: block; margin-bottom: 1rem; }
     .countdown { font-weight: bold; color: red; }
-    .bid-error { color: red; margin-top: 5px; font-size: 0.9em; }
+    .history { display: none; background: #f9f9f9; margin-top: 0.5rem; padding: 0.5rem; }
   </style>
 </head>
 <body>
-  <h1>Our Products</h1>
+  <h1>Ongoing Auctions</h1>
   <div id="product-list">Loading products...</div>
-
   <script type="module">
-    import { collection, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { db } from './firebase-config.js';
 
     const list = document.getElementById('product-list');
-    const MIN_INCREMENT = 0.5;
 
     async function loadProducts() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        list.innerHTML = '';
+      const now = Date.now() / 1000;
+      const q = query(collection(db, "products"), orderBy("ends_at"));
+      const snapshot = await getDocs(q);
+      list.innerHTML = '';
 
-        querySnapshot.forEach((docSnap) => {
-          const product = docSnap.data();
-          const docId = docSnap.id;
-          const endsAt = product.ends_at?.seconds * 1000 || null;
-          const now = Date.now();
-          const timeLeft = endsAt ? endsAt - now : null;
+      snapshot.forEach((doc) => {
+        const product = doc.data();
+        if (!product.ends_at || product.ends_at.seconds < now) return; // 只显示未结束的商品
 
-          const item = document.createElement('div');
-          item.className = 'product';
+        const endsAt = product.ends_at.seconds * 1000;
+        const item = document.createElement('div');
+        item.className = 'product';
 
-          item.innerHTML = `
-            <h2>${product.name}</h2>
-            <img src="${product.image_url}" alt="${product.name}" />
-            <p><strong>Price:</strong> $${product.price}</p>
-            <p>${product.description}</p>
-            <p><strong>Seller:</strong> ${product.seller_name}</p>
-            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docId}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
-            <p><strong>Current Bid:</strong> $<span id="cur-${docId}">${product.current_bid || 0}</span></p>
-            <input type="text" id="bid-${docId}" placeholder="Your bid..." />
-            <input type="text" id="name-${docId}" placeholder="Your name..." />
-            <button onclick="placeBid('${docId}', ${product.current_bid || 0}, ${endsAt})">Place Bid</button>
-            <div class="bid-error" id="err-${docId}"></div>
-          `;
+        item.innerHTML = `
+          <h2>${product.name}</h2>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <p><strong>Current Price:</strong> $${product.price}</p>
+          <p>${product.description}</p>
+          <p><strong>Seller:</strong> ${product.seller_name}</p>
+          <p><strong>Ends in:</strong> <span class="countdown" id="cd-${doc.id}"></span></p>
+          <input type="number" id="bid-${doc.id}" placeholder="Your bid..." />
+          <button onclick="submitBid('${doc.id}', ${product.price})">Place Bid</button>
+          <button onclick="toggleHistory('${doc.id}')">Show Bid History</button>
+          <div class="history" id="history-${doc.id}">Loading...</div>
+        `;
 
-          list.appendChild(item);
+        list.appendChild(item);
+        startCountdown(`cd-${doc.id}`, endsAt);
+      });
+    }
 
-          if (endsAt) {
-            startCountdown(`cd-${docId}`, endsAt);
-          }
-        });
-      } catch (error) {
-        console.error('Error loading products:', error);
-        list.innerText = 'Failed to load products.';
+    window.submitBid = async function(id, currentPrice) {
+      const input = document.getElementById(`bid-${id}`);
+      const value = parseFloat(input.value);
+      if (isNaN(value) || value <= currentPrice) {
+        alert("Your bid must be higher than the current price.");
+        return;
+      }
+      await fetch(`/bid-handler?id=${id}&bid=${value}`); // Placeholder URL
+      alert("Bid submitted!");
+    }
+
+    window.toggleHistory = async function(id) {
+      const box = document.getElementById(`history-${id}`);
+      box.style.display = box.style.display === 'block' ? 'none' : 'block';
+      if (box.innerText === 'Loading...') {
+        // Fetch bid history (to be implemented with Firestore)
+        box.innerText = 'TODO: Load history from Firestore.';
       }
     }
 
-    window.placeBid = async function (id, currentBid, endsAt) {
-      const bidInput = document.getElementById(`bid-${id}`);
-      const nameInput = document.getElementById(`name-${id}`);
-      const errorEl = document.getElementById(`err-${id}`);
-      const curEl = document.getElementById(`cur-${id}`);
-      const newBid = parseFloat(bidInput.value);
-      const bidder = nameInput.value.trim();
-
-      errorEl.textContent = '';
-
-      if (Date.now() > endsAt) {
-        errorEl.textContent = 'Bidding has ended.';
-        return;
-      }
-
-      if (!bidder) {
-        errorEl.textContent = 'Please enter your name.';
-        return;
-      }
-
-      if (isNaN(newBid) || newBid <= currentBid || newBid < currentBid + MIN_INCREMENT) {
-        errorEl.textContent = `Bid must be at least $${(currentBid + MIN_INCREMENT).toFixed(2)}`;
-        return;
-      }
-
-      try {
-        await updateDoc(doc(db, 'products', id), {
-          current_bid: newBid,
-          bidder_name: bidder,
-          bid_count: (parseInt(document.getElementById(`cd-${id}`)?.dataset?.count) || 0) + 1,
-          bid_history: arrayUnion({ amount: newBid, name: bidder, time: new Date().toISOString() })
-        });
-        curEl.textContent = newBid.toFixed(2);
-        bidInput.value = '';
-        nameInput.value = '';
-        errorEl.textContent = 'Bid placed successfully!';
-        errorEl.style.color = 'green';
-      } catch (err) {
-        console.error(err);
-        errorEl.textContent = 'Error placing bid.';
-        errorEl.style.color = 'red';
-      }
-    }
-
-    function formatCountdown(ms) {
-      const totalSeconds = Math.floor(ms / 1000);
-      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      return `${hours}:${minutes}:${seconds}`;
-    }
-
-    function startCountdown(elementId, endTime) {
-      const el = document.getElementById(elementId);
-      const timer = setInterval(() => {
-        const now = Date.now();
-        const diff = endTime - now;
+    function startCountdown(id, endTime) {
+      const el = document.getElementById(id);
+      const interval = setInterval(() => {
+        const diff = endTime - Date.now();
         if (diff <= 0) {
-          clearInterval(timer);
           el.innerText = 'Expired';
+          clearInterval(interval);
         } else {
-          el.innerText = formatCountdown(diff);
+          const h = Math.floor(diff / 1000 / 3600).toString().padStart(2, '0');
+          const m = Math.floor((diff / 1000 % 3600) / 60).toString().padStart(2, '0');
+          const s = Math.floor(diff / 1000 % 60).toString().padStart(2, '0');
+          el.innerText = `${h}:${m}:${s}`;
         }
       }, 1000);
     }
