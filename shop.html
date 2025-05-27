@@ -9,6 +9,7 @@
     .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
     img { max-width: 200px; display: block; margin-bottom: 1rem; }
     .countdown { font-weight: bold; color: red; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
   </style>
 </head>
 <body>
@@ -17,7 +18,7 @@
 
   <!-- Firebase SDK 模块加载 -->
   <script type="module">
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { db } from './firebase-config.js';
 
     const list = document.getElementById('product-list');
@@ -27,8 +28,8 @@
         const querySnapshot = await getDocs(collection(db, "products"));
         list.innerHTML = '';
 
-        querySnapshot.forEach((doc) => {
-          const product = doc.data();
+        querySnapshot.forEach((docSnapshot) => {
+          const product = docSnapshot.data();
           const endsAt = product.ends_at?.seconds * 1000 || null;
           const now = Date.now();
           const timeLeft = endsAt ? endsAt - now : null;
@@ -42,13 +43,15 @@
             <p><strong>Price:</strong> $${product.price}</p>
             <p>${product.description}</p>
             <p><strong>Seller:</strong> ${product.seller_name}</p>
-            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${doc.id}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
+            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docSnapshot.id}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
+            <p><strong>Current Bid:</strong> $${product.current_bid || 0}</p>
+            <button onclick="handleBid('${docSnapshot.id}', ${product.current_bid || 0})">Place Bid</button>
           `;
 
           list.appendChild(item);
 
           if (endsAt) {
-            startCountdown(`cd-${doc.id}`, endsAt);
+            startCountdown(`cd-${docSnapshot.id}`, endsAt);
           }
         });
       } catch (error) {
@@ -77,6 +80,29 @@
           el.innerText = formatCountdown(diff);
         }
       }, 1000);
+    }
+
+    // 出价功能
+    window.handleBid = async function(productId, currentBid) {
+      const userBid = parseFloat(prompt(`Current bid is $${currentBid}. Enter your bid:`));
+      if (isNaN(userBid)) {
+        alert('Invalid input. Please enter a number.');
+        return;
+      }
+      if (userBid <= currentBid) {
+        alert('Your bid must be higher than the current bid.');
+        return;
+      }
+
+      try {
+        const productRef = doc(db, "products", productId);
+        await updateDoc(productRef, { current_bid: userBid });
+        alert('Bid placed successfully!');
+        location.reload();
+      } catch (error) {
+        console.error('Failed to place bid:', error);
+        alert('Failed to place bid. Please try again.');
+      }
     }
 
     loadProducts();
