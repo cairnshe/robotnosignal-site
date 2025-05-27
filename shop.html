@@ -9,7 +9,9 @@
     .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
     img { max-width: 200px; display: block; margin-bottom: 1rem; }
     .countdown { font-weight: bold; color: red; }
-    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    .bid-input { margin-top: 1rem; }
+    .bid-message { margin-top: 0.5rem; color: green; font-weight: bold; }
+    .error { color: red; }
   </style>
 </head>
 <body>
@@ -28,8 +30,9 @@
         const querySnapshot = await getDocs(collection(db, "products"));
         list.innerHTML = '';
 
-        querySnapshot.forEach((docSnapshot) => {
-          const product = docSnapshot.data();
+        querySnapshot.forEach((docSnap) => {
+          const product = docSnap.data();
+          const docId = docSnap.id;
           const endsAt = product.ends_at?.seconds * 1000 || null;
           const now = Date.now();
           const timeLeft = endsAt ? endsAt - now : null;
@@ -43,15 +46,19 @@
             <p><strong>Price:</strong> $${product.price}</p>
             <p>${product.description}</p>
             <p><strong>Seller:</strong> ${product.seller_name}</p>
-            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docSnapshot.id}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
-            <p><strong>Current Bid:</strong> $${product.current_bid || 0}</p>
-            <button onclick="handleBid('${docSnapshot.id}', ${product.current_bid || 0})">Place Bid</button>
+            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docId}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
+
+            <div class="bid-input">
+              <input type="number" id="bid-${docId}" placeholder="Your bid..." />
+              <button onclick="placeBid('${docId}', ${product.current_bid})">Place Bid</button>
+              <div id="msg-${docId}" class="bid-message"></div>
+            </div>
           `;
 
           list.appendChild(item);
 
           if (endsAt) {
-            startCountdown(`cd-${docSnapshot.id}`, endsAt);
+            startCountdown(`cd-${docId}`, endsAt);
           }
         });
       } catch (error) {
@@ -83,27 +90,38 @@
     }
 
     // 出价功能
-    window.handleBid = async function(productId, currentBid) {
-      const userBid = parseFloat(prompt(`Current bid is $${currentBid}. Enter your bid:`));
-      if (isNaN(userBid)) {
-        alert('Invalid input. Please enter a number.');
+    window.placeBid = async function(docId, currentBid) {
+      const input = document.getElementById(`bid-${docId}`);
+      const message = document.getElementById(`msg-${docId}`);
+      const newBid = parseFloat(input.value);
+
+      if (isNaN(newBid)) {
+        message.textContent = "Please enter a valid number.";
+        message.className = "bid-message error";
         return;
       }
-      if (userBid <= currentBid) {
-        alert('Your bid must be higher than the current bid.');
+
+      if (newBid <= currentBid) {
+        message.textContent = `Bid must be higher than current: $${currentBid}`;
+        message.className = "bid-message error";
         return;
       }
 
       try {
-        const productRef = doc(db, "products", productId);
-        await updateDoc(productRef, { current_bid: userBid });
-        alert('Bid placed successfully!');
-        location.reload();
-      } catch (error) {
-        console.error('Failed to place bid:', error);
-        alert('Failed to place bid. Please try again.');
+        const docRef = doc(db, "products", docId);
+        await updateDoc(docRef, {
+          current_bid: newBid,
+          bid_count: (isNaN(currentBid) || currentBid === 0) ? 1 : currentBid + 1
+        });
+
+        message.textContent = `Bid placed: $${newBid}`;
+        message.className = "bid-message";
+      } catch (err) {
+        console.error("Failed to place bid:", err);
+        message.textContent = "Error placing bid.";
+        message.className = "bid-message error";
       }
-    }
+    };
 
     loadProducts();
   </script>
