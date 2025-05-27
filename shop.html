@@ -9,9 +9,7 @@
     .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
     img { max-width: 200px; display: block; margin-bottom: 1rem; }
     .countdown { font-weight: bold; color: red; }
-    .bid-input { margin-top: 1rem; }
-    .bid-message { margin-top: 0.5rem; color: green; font-weight: bold; }
-    .error { color: red; }
+    .error { color: red; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -20,51 +18,44 @@
 
   <!-- Firebase SDK 模块加载 -->
   <script type="module">
-    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { db } from './firebase-config.js';
 
     const list = document.getElementById('product-list');
 
-    async function loadProducts() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        list.innerHTML = '';
+    function renderProducts(snapshot) {
+      list.innerHTML = '';
 
-        querySnapshot.forEach((docSnap) => {
-          const product = docSnap.data();
-          const docId = docSnap.id;
-          const endsAt = product.ends_at?.seconds * 1000 || null;
-          const now = Date.now();
-          const timeLeft = endsAt ? endsAt - now : null;
+      snapshot.forEach((docSnap) => {
+        const product = docSnap.data();
+        const endsAt = product.ends_at?.seconds * 1000 || null;
+        const now = Date.now();
+        const timeLeft = endsAt ? endsAt - now : null;
 
-          const item = document.createElement('div');
-          item.className = 'product';
+        const item = document.createElement('div');
+        item.className = 'product';
+        item.id = `product-${docSnap.id}`;
 
-          item.innerHTML = `
-            <h2>${product.name}</h2>
-            <img src="${product.image_url}" alt="${product.name}" />
-            <p><strong>Price:</strong> $${product.price}</p>
-            <p>${product.description}</p>
-            <p><strong>Seller:</strong> ${product.seller_name}</p>
-            <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docId}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
+        item.innerHTML = `
+          <h2>${product.name}</h2>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <p><strong>Price:</strong> $${product.price}</p>
+          <p><strong>Current Bid:</strong> $<span id="current-${docSnap.id}">${product.current_bid}</span></p>
+          <p>${product.description}</p>
+          <p><strong>Seller:</strong> ${product.seller_name}</p>
+          <p><strong>Ends in:</strong> <span class="countdown" id="cd-${docSnap.id}">${timeLeft ? formatCountdown(timeLeft) : 'N/A'}</span></p>
 
-            <div class="bid-input">
-              <input type="number" id="bid-${docId}" placeholder="Your bid..." />
-              <button onclick="placeBid('${docId}', ${product.current_bid})">Place Bid</button>
-              <div id="msg-${docId}" class="bid-message"></div>
-            </div>
-          `;
+          <input type="number" placeholder="Your bid..." id="bid-${docSnap.id}" />
+          <button onclick="placeBid('${docSnap.id}', ${product.current_bid})">Place Bid</button>
+          <p class="error" id="error-${docSnap.id}"></p>
+        `;
 
-          list.appendChild(item);
+        list.appendChild(item);
 
-          if (endsAt) {
-            startCountdown(`cd-${docId}`, endsAt);
-          }
-        });
-      } catch (error) {
-        console.error('Error loading products:', error);
-        list.innerText = 'Failed to load products.';
-      }
+        if (endsAt) {
+          startCountdown(`cd-${docSnap.id}`, endsAt);
+        }
+      });
     }
 
     function formatCountdown(ms) {
@@ -89,41 +80,32 @@
       }, 1000);
     }
 
-    // 出价功能
     window.placeBid = async function(docId, currentBid) {
       const input = document.getElementById(`bid-${docId}`);
-      const message = document.getElementById(`msg-${docId}`);
+      const error = document.getElementById(`error-${docId}`);
       const newBid = parseFloat(input.value);
 
-      if (isNaN(newBid)) {
-        message.textContent = "Please enter a valid number.";
-        message.className = "bid-message error";
-        return;
-      }
-
-      if (newBid <= currentBid) {
-        message.textContent = `Bid must be higher than current: $${currentBid}`;
-        message.className = "bid-message error";
+      if (isNaN(newBid) || newBid <= currentBid) {
+        error.textContent = `Bid must be higher than current: $${currentBid}`;
         return;
       }
 
       try {
-        const docRef = doc(db, "products", docId);
-        await updateDoc(docRef, {
-          current_bid: newBid,
-          bid_count: (isNaN(currentBid) || currentBid === 0) ? 1 : currentBid + 1
-        });
-
-        message.textContent = `Bid placed: $${newBid}`;
-        message.className = "bid-message";
-      } catch (err) {
-        console.error("Failed to place bid:", err);
-        message.textContent = "Error placing bid.";
-        message.className = "bid-message error";
+        const productRef = doc(db, "products", docId);
+        await updateDoc(productRef, { current_bid: newBid });
+        error.style.color = 'green';
+        error.textContent = 'Bid placed successfully!';
+      } catch (e) {
+        console.error(e);
+        error.style.color = 'red';
+        error.textContent = 'Error placing bid.';
       }
-    };
+    }
 
-    loadProducts();
+    // ⏱ 实时监听产品变更并更新界面
+    onSnapshot(collection(db, "products"), (snapshot) => {
+      renderProducts(snapshot);
+    });
   </script>
 </body>
 </html>
