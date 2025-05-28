@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - Robot No Signal</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { firebaseConfig } from './firebase-config.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("signup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const message = document.getElementById("message");
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        message.innerText = "Signup successful! Redirecting...";
+        window.location.href = "/shop.html";
+      } catch (error) {
+        message.innerText = error.message;
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>Sign Up</h1>
+  <form id="signup-form">
+    <label>Email:<br><input type="email" id="email" required></label><br><br>
+    <label>Password:<br><input type="password" id="password" required></label><br><br>
+    <button type="submit">Sign Up</button>
+  </form>
+  <p id="message"></p>
+  <p>Already have an account? <a href="/login.html">Log in here</a>.</p>
+</body>
+</html>
