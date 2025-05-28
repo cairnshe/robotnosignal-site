@@ -77,17 +77,19 @@
       <input type="password" id="password" placeholder="Password" required /><br />
       <button type="submit">Sign Up</button>
     </form>
-    <p class="small-link">Already have an account? <a href="/login">Log in here.</a></p>
+    <p class="small-link">Already have an account? <a href="/login.html">Log in here.</a></p>
     <p id="message"></p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     import { firebaseConfig } from "./firebase-config.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     document.getElementById("signup-form").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -96,7 +98,15 @@
       const message = document.getElementById("message");
 
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 设置会员权限（有效期暂设为 2025-08-31）
+        const paidUntil = Timestamp.fromDate(new Date("2025-08-31"));
+        await setDoc(doc(db, "memberships", user.uid), {
+          paid_until: paidUntil
+        });
+
         message.innerText = "Signup successful! Redirecting...";
         setTimeout(() => {
           window.location.href = "/shop.html";
