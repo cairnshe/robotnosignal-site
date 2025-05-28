@@ -4,29 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign Up – Robot No Signal</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { firebaseConfig } from './firebase-config.js';
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    document.getElementById("signup-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const message = document.getElementById("message");
-
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        message.innerText = "Signup successful! Redirecting...";
-        window.location.href = "/shop.html";
-      } catch (error) {
-        message.innerText = error.message;
-      }
-    });
-  </script>
   <style>
     body {
       margin: 0;
@@ -96,12 +73,44 @@
   <div class="form-container">
     <h2>Sign Up</h2>
     <form id="signup-form">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
+      <input type="email" id="email" placeholder="Email" required /><br />
+      <input type="password" id="password" placeholder="Password" required /><br />
       <button type="submit">Sign Up</button>
     </form>
+    <p class="small-link">Already have an account? <a href="/login">Log in here.</a></p>
     <p id="message"></p>
-    <p class="small-link">Already have an account? <a href="/login.html">Log in here</a>.</p>
   </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("signup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const message = document.getElementById("message");
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        message.innerText = "Signup successful! Redirecting...";
+        setTimeout(() => {
+          window.location.href = "/shop.html";
+        }, 1000);
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+          message.innerText = "This email is already registered.";
+        } else if (error.code === 'auth/weak-password') {
+          message.innerText = "Password should be at least 6 characters.";
+        } else {
+          message.innerText = error.message;
+        }
+      }
+    });
+  </script>
 </body>
 </html>
