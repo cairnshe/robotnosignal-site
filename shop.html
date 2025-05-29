@@ -28,9 +28,9 @@
   <div id="product-list">Loading products...</div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { firebaseConfig } from './firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
@@ -136,7 +136,7 @@
             const err = item.querySelector(`#error-${product.id}`);
             input.disabled = true;
             btn.disabled = true;
-            err.innerHTML = `Log in / <a href='/login'>Sign up</a> before bidding!`;
+            err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
           }
         });
 
@@ -181,12 +181,18 @@
     }
 
     onAuthStateChanged(auth, async (user) => {
-      currentUser = user;
-      isMember = false;
-      if (user) {
-        isMember = await checkMembership(user.uid);
+      try {
+        currentUser = user;
+        isMember = false;
+        if (user) {
+          isMember = await checkMembership(user.uid);
+        }
+        console.log("User loaded:", user?.email || "anonymous", "isMember:", isMember);
+        loadProducts();
+      } catch (err) {
+        console.error("Error during auth state change:", err);
+        list.innerText = 'Error loading user state.';
       }
-      loadProducts();
     });
   </script>
 </body>
