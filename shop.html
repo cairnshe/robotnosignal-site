@@ -58,13 +58,28 @@
       }, 1000);
     }
 
-    async function checkMembership(uid) {
-      const ref = doc(db, "memberships", uid);
+    onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  isMember = false;
+
+  if (user) {
+    try {
+      const ref = doc(db, "memberships", user.uid);
       const snap = await getDoc(ref);
-      if (!snap.exists()) return false;
-      const paidUntil = snap.data().paid_until;
-      return paidUntil?.seconds * 1000 > Date.now();
+      if (snap.exists()) {
+        const paidUntil = snap.data().paid_until;
+        if (paidUntil?.seconds * 1000 > Date.now()) {
+          isMember = true;
+        }
+      }
+    } catch (e) {
+      console.error("Error checking membership:", e);
     }
+  }
+
+  loadProducts(); // 登录检查后再加载商品
+});
+
 
     async function loadProducts() {
       try {
