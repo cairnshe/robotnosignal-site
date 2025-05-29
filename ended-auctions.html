@@ -1,70 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ended Auctions - Robot No Signal</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; }
-    .product { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
-    img { max-width: 200px; display: block; margin-bottom: 1rem; }
-    .status { font-weight: bold; color: darkgreen; }
-    .unsold { color: gray; font-style: italic; }
-  </style>
-</head>
-<body>
-  <h1>Ended Auctions</h1>
-  <div id="ended-product-list">Loading ended auctions...</div>
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-  <script type="module">
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-    import { db } from './firebase-config.js';
+  const list = document.getElementById('ended-product-list');
 
-    const list = document.getElementById('ended-product-list');
+  async function loadEndedAuctions() {
+    try {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const now = Date.now();
+      const ended = [];
 
-    async function loadEndedAuctions() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const now = Date.now();
-        const ended = [];
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        const endsAt = data.ends_at?.seconds * 1000;
+        if (endsAt && endsAt <= now) {
+          ended.push({ id: doc.id, ...data });
+        }
+      });
 
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          const endsAt = data.ends_at?.seconds * 1000;
-          if (endsAt && endsAt <= now) {
-            ended.push({ id: doc.id, ...data });
-          }
-        });
+      ended.sort((a, b) => a.ends_at.seconds - b.ends_at.seconds);
+      list.innerHTML = '';
 
-        ended.sort((a, b) => a.ends_at.seconds - b.ends_at.seconds);
-        list.innerHTML = '';
+      ended.forEach(product => {
+        const finalPrice = product.bid_count > 0 ? product.current_bid : 0;
+        const item = document.createElement('div');
+        item.className = 'product';
 
-        ended.forEach(product => {
-          const finalPrice = product.bid_count > 0 ? product.current_bid : 0;
-          const item = document.createElement('div');
-          item.className = 'product';
+        item.innerHTML = `
+          <h2>${product.name}</h2>
+          <img src="${product.image_url}" alt="${product.name}" />
+          <p>${product.description}</p>
+          <p><strong>Seller:</strong> ${product.seller_name}</p>
+          <p><strong>Ended at:</strong> ${new Date(product.ends_at.seconds * 1000).toLocaleString()}</p>
+          <p><strong>Final Price:</strong> $${finalPrice}</p>
+          <p class="${product.bid_count > 0 ? 'status' : 'unsold'}">
+            ${product.bid_count > 0 ? `Sold (${product.bid_count} bids)` : 'No bids placed – Unsold'}
+          </p>
+        `;
 
-          item.innerHTML = `
-            <h2>${product.name}</h2>
-            <img src="${product.image_url}" alt="${product.name}" />
-            <p>${product.description}</p>
-            <p><strong>Seller:</strong> ${product.seller_name}</p>
-            <p><strong>Ended at:</strong> ${new Date(product.ends_at.seconds * 1000).toLocaleString()}</p>
-            <p><strong>Final Price:</strong> $${finalPrice}</p>
-            <p class="${product.bid_count > 0 ? 'status' : 'unsold'}">
-              ${product.bid_count > 0 ? `Sold (${product.bid_count} bids)` : 'No bids placed – Unsold'}
-            </p>
-          `;
-
-          list.appendChild(item);
-        });
-      } catch (error) {
-        console.error('Error loading ended auctions:', error);
-        list.innerText = 'Failed to load ended auctions.';
-      }
+        list.appendChild(item);
+      });
+    } catch (error) {
+      console.error('Error loading ended auctions:', error);
+      list.innerText = 'Failed to load ended auctions.';
     }
+  }
 
-    loadEndedAuctions();
-  </script>
-</body>
-</html>
+  loadEndedAuctions();
+</script>
