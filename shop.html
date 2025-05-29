@@ -162,10 +162,20 @@
       const error = document.getElementById(`error-${productId}`);
       const amount = parseFloat(input.value);
 
-      if (isNaN(amount) || amount <= currentBid) {
-        error.innerText = `Bid must be higher than current: $${currentBid}`;
-        return;
-      }
+     // 新的最小加价逻辑
+let minIncrement = 1;
+if (currentBid >= 100) {
+  minIncrement = 4;
+} else if (currentBid >= 50) {
+  minIncrement = 2;
+}
+
+const minRequired = currentBid + minIncrement;
+
+if (isNaN(amount) || amount < minRequired) {
+  error.innerText = `Your bid must be at least $${minRequired.toFixed(2)}`;
+  return;
+}
 
       try {
         const productRef = doc(db, "products", productId);
