@@ -28,9 +28,9 @@
   <div id="product-list">Loading products...</div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
     import { firebaseConfig } from './firebase-config.js';
 
     const app = initializeApp(firebaseConfig);
@@ -130,14 +130,13 @@
             historyEl.appendChild(li);
           }
 
-          // 禁止非会员出价
           if (!isMember) {
             const input = item.querySelector(`#input-${product.id}`);
             const btn = item.querySelector('button');
             const err = item.querySelector(`#error-${product.id}`);
             input.disabled = true;
             btn.disabled = true;
-            err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
+            err.innerHTML = `Log in / <a href='/login'>Sign up</a> before bidding!`;
           }
         });
 
