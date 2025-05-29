@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login – Robot No Signal</title>
-    </script>
   <style>
     body {
       margin: 0;
@@ -70,9 +69,8 @@
 <body>
   <img src="/favicon-96x96.png" alt="Robot No Signal Logo" class="logo" width="80" height="80" />
   <h1>Robot No Signal</h1>
-  </div>
 
- <div class="form-container">
+  <div class="form-container">
     <h2>Login</h2>
     <form id="login-form">
       <input type="email" id="email" placeholder="Email" required /><br />
@@ -100,7 +98,9 @@
       try {
         await signInWithEmailAndPassword(auth, email, password);
         message.innerText = "Login successful! Redirecting...";
-        window.location.href = "/shop.html";
+        setTimeout(() => {
+          window.location.href = "/shop.html";
+        }, 800);
       } catch (error) {
         message.innerText = error.message;
       }
