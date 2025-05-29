@@ -176,14 +176,27 @@
     }
 
     onAuthStateChanged(auth, async (user) => {
-      try {
-        currentUser = user;
-        isMember = false;
-        if (user) {
-          isMember = await checkMembership(user.uid);
+  currentUser = user;
+  isMember = false;
+
+  if (user) {
+    try {
+      const ref = doc(db, "memberships", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const paidUntil = snap.data().paid_until;
+        if (paidUntil?.seconds * 1000 > Date.now()) {
+          isMember = true;
         }
-        console.log("User loaded:", user?.email || "anonymous", "isMember:", isMember);
-        loadProducts();
+      }
+    } catch (e) {
+      console.error("Error checking membership:", e);
+    }
+  }
+
+  loadProducts();
+});
+
       } catch (err) {
         console.error("Error during auth state change:", err);
         list.innerText = 'Error loading user state.';
