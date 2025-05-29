@@ -30,9 +30,16 @@
 
   <script type="module">
     import { collection, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
     import { db } from './firebase-config.js';
 
     const list = document.getElementById('product-list');
+    let currentUser = null;
+
+    const auth = getAuth();
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+    });
 
     function formatCountdown(ms) {
       const totalSeconds = Math.floor(ms / 1000);
@@ -66,7 +73,6 @@
           products.push({ id: docSnap.id, ...data });
         });
 
-        // 排序：按结束时间升序
         products.sort((a, b) => a.ends_at?.seconds - b.ends_at?.seconds);
 
         const now = Date.now();
@@ -104,7 +110,6 @@
           list.appendChild(item);
           startCountdown(`cd-${product.id}`, endsAt);
 
-          // 加载出价历史
           const historyEl = item.querySelector(`#history-${product.id}`);
           if (bids.length) {
             bids.slice().reverse().forEach(b => {
@@ -131,6 +136,11 @@
       const error = document.getElementById(`error-${productId}`);
       const amount = parseFloat(input.value);
 
+      if (!currentUser) {
+        error.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
+        return;
+      }
+
       if (isNaN(amount) || amount <= currentBid) {
         error.innerText = `Bid must be higher than current: $${currentBid}`;
         return;
@@ -140,10 +150,10 @@
         const productRef = doc(db, "products", productId);
         await updateDoc(productRef, {
           current_bid: amount,
-          bid_count: (bid => (typeof bid === 'number' ? bid : 0))(currentBid) + 1,
+          bid_count: (typeof currentBid === 'number' ? currentBid : 0) + 1,
           bids: arrayUnion({
             amount,
-            bidder: "anonymous",
+            bidder: currentUser.email || "Anonymous",
             timestamp: new Date()
           })
         });
