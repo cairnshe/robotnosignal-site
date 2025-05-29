@@ -24,22 +24,22 @@
   <div class="ended-link">
     <a href="/ended-auctions.html"><button>View Ended Auctions</button></a>
   </div>
-
   <h1>Our Products</h1>
   <div id="product-list">Loading products...</div>
 
   <script type="module">
-    import { collection, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-    import { db } from './firebase-config.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { firebaseConfig } from './firebase-config.js';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    let currentUser = null;
+    let isMember = false;
 
     const list = document.getElementById('product-list');
-    let currentUser = null;
-
-    const auth = getAuth();
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-    });
 
     function formatCountdown(ms) {
       const totalSeconds = Math.floor(ms / 1000);
@@ -63,6 +63,14 @@
       }, 1000);
     }
 
+    async function checkMembership(uid) {
+      const ref = doc(db, "memberships", uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return false;
+      const paidUntil = snap.data().paid_until;
+      return paidUntil?.seconds * 1000 > Date.now();
+    }
+
     async function loadProducts() {
       try {
         const querySnapshot = await getDocs(collection(db, "products"));
@@ -74,10 +82,8 @@
         });
 
         products.sort((a, b) => a.ends_at?.seconds - b.ends_at?.seconds);
-
         const now = Date.now();
         const ongoing = products.filter(p => p.ends_at?.seconds * 1000 > now);
-
         list.innerHTML = '';
 
         ongoing.forEach((product) => {
@@ -123,6 +129,16 @@
             li.innerText = "No bids yet.";
             historyEl.appendChild(li);
           }
+
+          // 禁止非会员出价
+          if (!isMember) {
+            const input = item.querySelector(`#input-${product.id}`);
+            const btn = item.querySelector('button');
+            const err = item.querySelector(`#error-${product.id}`);
+            input.disabled = true;
+            btn.disabled = true;
+            err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
+          }
         });
 
       } catch (error) {
@@ -136,11 +152,6 @@
       const error = document.getElementById(`error-${productId}`);
       const amount = parseFloat(input.value);
 
-      if (!currentUser) {
-        error.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
-        return;
-      }
-
       if (isNaN(amount) || amount <= currentBid) {
         error.innerText = `Bid must be higher than current: $${currentBid}`;
         return;
@@ -150,10 +161,9 @@
         const productRef = doc(db, "products", productId);
         await updateDoc(productRef, {
           current_bid: amount,
-          bid_count: (typeof currentBid === 'number' ? currentBid : 0) + 1,
           bids: arrayUnion({
             amount,
-            bidder: currentUser.email || "Anonymous",
+            bidder: currentUser?.email || "anonymous",
             timestamp: new Date()
           })
         });
@@ -171,7 +181,14 @@
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
-    loadProducts();
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      isMember = false;
+      if (user) {
+        isMember = await checkMembership(user.uid);
+      }
+      loadProducts();
+    });
   </script>
 </body>
 </html>
