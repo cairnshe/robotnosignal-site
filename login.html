@@ -96,15 +96,20 @@
   const message = document.getElementById("message");
 
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Signed in user:", userCredential.user); // ✅ 调试信息
-    message.innerText = "Login successful! Redirecting...";
-    setTimeout(() => {
-      window.location.href = "/shop.html"; // ✅ 正确跳转
-    }, 800);
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            window.location.href = "/shop.html";
+            unsubscribe();
+          }
+        });
+      })
+      .catch((error) => {
+        message.innerText = error.message;
+      });
   } catch (error) {
     message.innerText = error.message;
-    console.error("Login failed:", error); // ✅ 捕捉错误
   }
 });
 
