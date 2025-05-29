@@ -90,23 +90,24 @@
     const auth = getAuth(app);
 
     document.getElementById("login-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const message = document.getElementById("message");
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("message");
 
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        console.log("Signed in user:", userCredential.user);
-        message.innerText = "Login successful! Redirecting...";
-        setTimeout(() => {
-          window.location.href = "/shop.html";
-        }, 800);
-      } catch (error) {
-        message.innerText = error.message;
-        console.error("Login failed:", error);
-      }
-    });
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Signed in user:", userCredential.user); // ✅ 调试信息
+    message.innerText = "Login successful! Redirecting...";
+    setTimeout(() => {
+      window.location.href = "/shop.html"; // ✅ 正确跳转
+    }, 800);
+  } catch (error) {
+    message.innerText = error.message;
+    console.error("Login failed:", error); // ✅ 捕捉错误
+  }
+});
+
   </script>
 </body>
 </html>
