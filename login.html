@@ -96,13 +96,15 @@
       const message = document.getElementById("message");
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Signed in user:", userCredential.user);
         message.innerText = "Login successful! Redirecting...";
         setTimeout(() => {
           window.location.href = "/shop.html";
         }, 800);
       } catch (error) {
         message.innerText = error.message;
+        console.error("Login failed:", error);
       }
     });
   </script>
