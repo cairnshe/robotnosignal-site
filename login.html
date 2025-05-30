@@ -99,6 +99,20 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+// 强制登出：用户每次打开页面必须重新登录
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    signOut(auth).then(() => {
+      console.log("✅ Forced sign-out on page load.");
+    }).catch((error) => {
+      console.error("Sign-out error:", error);
+    });
+  }
+});
+
+
     const form = document.getElementById("login-form");
     const message = document.getElementById("message");
 
