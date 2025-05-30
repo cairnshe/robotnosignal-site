@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ended Auctions - Robot No Signal</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+    }
 
     .product {
       border: 1px solid #ccc;
@@ -29,38 +32,40 @@
       font-style: italic;
     }
 
-    /* ✅ 新增按钮样式 */
+    /* ✅ 修复后的按钮样式 */
     .nav-buttons {
       text-align: center;
       margin-bottom: 2rem;
     }
 
-    .nav-buttons a button {
+    .nav-buttons .btn {
       background-color: #ff6600;
       color: white;
       font-size: 1rem;
-      border: none;
+      text-decoration: none;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
       margin: 0 1rem;
       cursor: pointer;
-      transition: background-color 0.3s ease;
       min-width: 200px;
-      text-align: center;
+      transition: background-color 0.3s ease;
     }
 
-    .nav-buttons a button:hover {
+    .nav-buttons .btn:hover {
       background-color: #e65c00;
     }
   </style>
 </head>
 <body>
 
-  <!-- ✅ 插入的两个按钮 -->
- <div class="nav-buttons">
-  <a href="/index.html" class="btn">⬅ Back to Home Page</a>
-  <a href="/shop.html" class="btn">Ongoing Auctions</a>
-</div>
+  <!-- ✅ 恢复的两个按钮 -->
+  <div class="nav-buttons">
+    <a href="/index.html" class="btn">⬅ Back to Home Page</a>
+    <a href="/shop.html" class="btn">Ongoing Auctions</a>
+  </div>
 
   <h1>Ended Auctions</h1>
   <div id="ended-product-list">Loading ended auctions...</div>
