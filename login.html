@@ -86,13 +86,9 @@
     <p id="message"></p>
   </div>
 
- <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import {
-    getAuth,
-    signInWithEmailAndPassword,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
   import { firebaseConfig } from "./firebase-config.js";
 
   const app = initializeApp(firebaseConfig);
@@ -106,12 +102,20 @@
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
+    console.log("🔐 Attempting login with:", email);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Login success:", userCredential.user.email);
       message.style.color = "green";
       message.innerText = "Login successful! Redirecting...";
+
+      // 尝试立即跳转
+      setTimeout(() => {
+        window.location.href = "/shop.html";
+      }, 500);
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
       message.style.color = "red";
 
       if (error.code === "auth/user-not-found") {
@@ -121,14 +125,6 @@
       } else {
         message.innerText = "Login failed: " + error.message;
       }
-    }
-  });
-
-  // ✅ 监听登录状态，登录后跳转
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("✅ User logged in:", user.email);
-      window.location.href = "/shop.html";
     }
   });
 </script>
