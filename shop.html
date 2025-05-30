@@ -12,17 +12,27 @@
     .error { color: red; font-size: 0.9rem; }
     .history { margin-top: 0.5rem; font-size: 0.9rem; }
     .bid-input { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
-    .ended-link { margin-bottom: 2rem; }
-    .ended-link button {
-      padding: 0.5rem 1rem;
+    .nav-buttons { text-align: center; margin-bottom: 2rem; }
+    .nav-buttons a button {
+      background-color: #ff6600;
+      color: white;
       font-size: 1rem;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      margin: 0 1rem;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .nav-buttons a button:hover {
+      background-color: #e65c00;
     }
   </style>
 </head>
 <body>
-  <div class="ended-link">
-   
+  <div class="nav-buttons">
+    <a href="/shop.html"><button>Ongoing Auctions</button></a>
+    <a href="/ended-auctions.html"><button>Ended Auctions</button></a>
   </div>
   <h1>Our Products</h1>
   <div id="product-list">Loading products...</div>
