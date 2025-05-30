@@ -1,7 +1,11 @@
 // firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDbrc6FV024PCp9SDlJ_-Y5QpbxdqvTYJI",
@@ -16,5 +20,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// ✅ 强制使用 localStorage 持久化登录状态
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("✅ Auth persistence set to localStorage");
+  })
+  .catch((error) => {
+    console.error("Persistence error:", error);
+  });
 
 export { app, db, auth };
