@@ -12,20 +12,26 @@
     .error { color: red; font-size: 0.9rem; }
     .history { margin-top: 0.5rem; font-size: 0.9rem; }
     .bid-input { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
-    .nav-buttons { text-align: center; margin-bottom: 2rem; }
+
+    /* ✅ 插入的容器样式 */
+    .nav-buttons {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
     .nav-buttons a button {
-  background-color: #ff6600;
-  color: white;
-  font-size: 1rem;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  margin: 0 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  min-width: 200px; /* ✅ 固定宽度 */
-  text-align: center;
-}
+      background-color: #ff6600;
+      color: white;
+      font-size: 1rem;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      margin: 0 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      min-width: 200px; /* 固定宽度 */
+      text-align: center;
+    }
 
     .nav-buttons a button:hover {
       background-color: #e65c00;
@@ -33,20 +39,23 @@
   </style>
 </head>
 <body>
+
+  <!-- ✅ 插入的按钮区块 -->
   <div class="nav-buttons">
-  <a href="/index.html"><button>⬅ Back to Home Page</button></a>
-  <a href="/ended-auctions.html"><button>Ended Auctions</button></a>
-</div>
+    <a href="/index.html"><button>⬅ Back to Home Page</button></a>
+    <a href="/ended-auctions.html"><button>Ended Auctions</button></a>
+  </div>
+
   <h1>Ongoing Auctions</h1>
   <div id="product-list">Loading products...</div>
 
- <script type="module">
-  import { db, auth } from './firebase-config.js';
-  import { collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  <script type="module">
+    import { db, auth } from './firebase-config.js';
+    import { collection, getDocs, doc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    
     let currentUser = null;
     let isMember = false;
-
     const list = document.getElementById('product-list');
 
     function formatCountdown(ms) {
@@ -72,27 +81,26 @@
     }
 
     onAuthStateChanged(auth, async (user) => {
-  currentUser = user;
-  isMember = false;
+      currentUser = user;
+      isMember = false;
 
-  if (user) {
-    try {
-      const ref = doc(db, "memberships", user.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const paidUntil = snap.data().paid_until;
-        if (paidUntil?.seconds * 1000 > Date.now()) {
-          isMember = true;
+      if (user) {
+        try {
+          const ref = doc(db, "memberships", user.uid);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            const paidUntil = snap.data().paid_until;
+            if (paidUntil?.seconds * 1000 > Date.now()) {
+              isMember = true;
+            }
+          }
+        } catch (e) {
+          console.error("Error checking membership:", e);
         }
       }
-    } catch (e) {
-      console.error("Error checking membership:", e);
-    }
-  }
 
-  loadProducts(); // 登录检查后再加载商品
-});
-
+      loadProducts();
+    });
 
     async function loadProducts() {
       try {
@@ -175,20 +183,19 @@
       const error = document.getElementById(`error-${productId}`);
       const amount = parseFloat(input.value);
 
-     // 新的最小加价逻辑
-let minIncrement = 1;
-if (currentBid >= 100) {
-  minIncrement = 4;
-} else if (currentBid >= 50) {
-  minIncrement = 2;
-}
+      let minIncrement = 1;
+      if (currentBid >= 100) {
+        minIncrement = 4;
+      } else if (currentBid >= 50) {
+        minIncrement = 2;
+      }
 
-const minRequired = currentBid + minIncrement;
+      const minRequired = currentBid + minIncrement;
 
-if (isNaN(amount) || amount < minRequired) {
-  error.innerText = `Your bid must be at least $${minRequired.toFixed(2)}`;
-  return;
-}
+      if (isNaN(amount) || amount < minRequired) {
+        error.innerText = `Your bid must be at least $${minRequired.toFixed(2)}`;
+        return;
+      }
 
       try {
         const productRef = doc(db, "products", productId);
@@ -213,7 +220,6 @@ if (isNaN(amount) || amount < minRequired) {
       const el = document.getElementById(`history-${id}`);
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
-
   </script>
 </body>
 </html>
