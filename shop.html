@@ -14,16 +14,19 @@
     .bid-input { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
     .nav-buttons { text-align: center; margin-bottom: 2rem; }
     .nav-buttons a button {
-      background-color: #ff6600;
-      color: white;
-      font-size: 1rem;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      margin: 0 1rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
+  background-color: #ff6600;
+  color: white;
+  font-size: 1rem;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  margin: 0 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 200px; /* ✅ 固定宽度 */
+  text-align: center;
+}
+
     .nav-buttons a button:hover {
       background-color: #e65c00;
     }
