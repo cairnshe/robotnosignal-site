@@ -55,8 +55,8 @@
   <h1>Ongoing Auctions</h1>
   <div id="product-list">Loading products...</div>
 
- <script type="module">
-  import { db, auth } from './firebase-config-raw.js';
+<script type="module">
+  import { db, auth } from './firebase-config.js';  // ✅ 正确的版本
   import {
     collection,
     getDocs,
@@ -65,6 +65,7 @@
     arrayUnion,
     getDoc
   } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
   
   let currentUser = null;
