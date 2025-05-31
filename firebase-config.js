@@ -4,7 +4,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase
 import {
   getAuth,
   setPersistence,
-  browserLocalPersistence
+  browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -21,13 +21,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// ✅ 设置登录状态仅在当前标签页有效
 setPersistence(auth, browserSessionPersistence)
-
   .then(() => {
-    console.log("✅ Auth persistence set to localStorage");
+    console.log("✅ Auth persistence set to session only");
   })
   .catch((error) => {
-    console.error("Persistence error:", error);
+    console.error("❌ Persistence error:", error);
   });
 
 export { app, db, auth };
