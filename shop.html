@@ -94,32 +94,29 @@
     }, 1000);
   }
 
-  onAuthStateChanged(auth, async (user) => {
-  console.log("🔍 Auth state changed:", user);
+onAuthStateChanged(auth, async (user) => {
+  console.log("👤 Auth state changed:", user);
   currentUser = user;
   isMember = false;
 
-  if (!user) {
-    console.warn("⚠️ No user detected. Only guests can view products.");
-    loadProducts();  // Load as guest
-    return;
-  }
-
-  try {
-    const ref = doc(db, "memberships", user.uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      const paidUntil = snap.data().paid_until;
-      if (paidUntil?.seconds * 1000 > Date.now()) {
-        isMember = true;
+  if (user) {
+    try {
+      const ref = doc(db, "memberships", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const paidUntil = snap.data().paid_until;
+        if (paidUntil?.seconds * 1000 > Date.now()) {
+          isMember = true;
+        }
       }
+    } catch (e) {
+      console.error("❌ Error checking membership:", e);
     }
-  } catch (e) {
-    console.error("❌ Error checking membership:", e);
   }
 
-  console.log("✅ Final membership status:", isMember);
-  loadProducts();
+  console.log("✅ Current user:", currentUser?.email || "None");
+  console.log("✅ Is member:", isMember);
+  loadProducts();  // ✅ 只在 auth 初始化完成后执行
 });
 
   async function loadProducts() {
