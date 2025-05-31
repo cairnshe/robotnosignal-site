@@ -95,9 +95,10 @@
   }
 
 onAuthStateChanged(auth, async (user) => {
-  console.log("👤 Auth state changed:", user);
+  console.log("👀 onAuthStateChanged fired. User:", user);  // ✅ 新增这行
   currentUser = user;
   isMember = false;
+
 
   if (user) {
     try {
