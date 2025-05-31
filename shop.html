@@ -95,28 +95,32 @@
   }
 
   onAuthStateChanged(auth, async (user) => {
-    console.log("Detected auth state:", user);  // ✅ 调试用
-    currentUser = user;
-    isMember = false;
+  console.log("🔍 Auth state changed:", user);
+  currentUser = user;
+  isMember = false;
 
-    if (user) {
-      try {
-        const ref = doc(db, "memberships", user.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const paidUntil = snap.data().paid_until;
-          if (paidUntil?.seconds * 1000 > Date.now()) {
-            isMember = true;
-          }
-        }
-      } catch (e) {
-        console.error("Error checking membership:", e);
+  if (!user) {
+    console.warn("⚠️ No user detected. Only guests can view products.");
+    loadProducts();  // Load as guest
+    return;
+  }
+
+  try {
+    const ref = doc(db, "memberships", user.uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const paidUntil = snap.data().paid_until;
+      if (paidUntil?.seconds * 1000 > Date.now()) {
+        isMember = true;
       }
     }
+  } catch (e) {
+    console.error("❌ Error checking membership:", e);
+  }
 
-    console.log("Is member:", isMember);  // ✅ 调试用
-    loadProducts();
-  });
+  console.log("✅ Final membership status:", isMember);
+  loadProducts();
+});
 
   async function loadProducts() {
     try {
