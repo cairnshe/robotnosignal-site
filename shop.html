@@ -56,7 +56,11 @@
   <div id="product-list">Loading products...</div>
 
 <script type="module">
-  import { db, auth } from './firebase-config.js';  // ✅ 正确的版本
+  console.log("✅ shop.html script started");
+
+  import { db, auth } from './firebase-config.js';
+  console.log("✅ Firebase modules imported", auth);
+
   import {
     collection,
     getDocs,
@@ -67,7 +71,9 @@
   } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  
+
+  console.log("📡 Listening for auth state change...");
+
   let currentUser = null;
   let isMember = false;
   const list = document.getElementById('product-list');
@@ -79,6 +85,8 @@
     const seconds = String(totalSeconds % 60).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   }
+
+  // ✅ 此处继续 onAuthStateChanged(...) 和 loadProducts() 等函数不动
 
   function startCountdown(elementId, endTime) {
     const el = document.getElementById(elementId);
