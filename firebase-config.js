@@ -21,8 +21,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// ✅ 强制使用 localStorage 持久化登录状态
-setPersistence(auth, browserLocalPersistence)
+setPersistence(auth, browserSessionPersistence)
+
   .then(() => {
     console.log("✅ Auth persistence set to localStorage");
   })
