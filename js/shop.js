@@ -70,6 +70,7 @@ onAuthStateChanged(auth, async (user) => {
 async function loadProducts() {
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
+    console.log("📦 Raw Firestore docs:", querySnapshot.size);  // ✅ 调试输出
     const products = [];
 
     querySnapshot.forEach((docSnap) => {
@@ -185,4 +186,3 @@ window.toggleHistory = function(id) {
   const el = document.getElementById(`history-${id}`);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 };
-
