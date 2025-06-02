@@ -129,15 +129,20 @@ async function loadProducts() {
         historyEl.appendChild(li);
       }
 
-      if (!isMember) {
-        const input = item.querySelector(`#input-${product.id}`);
-        const btn = item.querySelector('button');
-        const err = item.querySelector(`#error-${product.id}`);
-        input.disabled = true;
-        btn.disabled = true;
-        err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
-      }
-    });
+    const input = item.querySelector(`#input-${product.id}`);
+const btn = item.querySelector('button');
+const err = item.querySelector(`#error-${product.id}`);
+
+if (!isMember) {
+  input.disabled = true;
+  btn.disabled = true;
+  err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
+} else {
+  input.disabled = false;
+  btn.disabled = false;
+  err.innerHTML = '';  // 清除任何错误提示
+}
+
 
   } catch (error) {
     console.error('Error loading products:', error);
