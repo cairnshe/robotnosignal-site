@@ -43,30 +43,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1000);
   }
 
-  onAuthStateChanged(auth, async (user) => {
-    console.log("👀 onAuthStateChanged fired. User:", user);
-    currentUser = user;
-    isMember = false;
+ onAuthStateChanged(auth, async (user) => {
+  console.log("👀 onAuthStateChanged fired. User:", user);
+  currentUser = user;
+  isMember = false;
 
-    if (user) {
-      try {
-        const ref = doc(db, "memberships", user.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const paidUntil = snap.data().paid_until;
-          if (paidUntil?.seconds * 1000 > Date.now()) {
-            isMember = true;
-          }
+  if (user) {
+    try {
+      const ref = doc(db, "memberships", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const paidUntil = snap.data().paid_until;
+        if (paidUntil?.seconds * 1000 > Date.now()) {
+          isMember = true;
         }
-      } catch (e) {
-        console.error("❌ Error checking membership:", e);
       }
+    } catch (e) {
+      console.error("❌ Error checking membership:", e);
     }
+  }
 
-    console.log("✅ Current user:", currentUser?.email || "None");
-    console.log("✅ Is member:", isMember);
-    loadProducts();
-  });
+  console.log("✅ Current user:", currentUser?.email || "None");
+  console.log("✅ Is member:", isMember);
+
+  // ✅ 确保在身份检查完成后再加载商品
+  await loadProducts();
+});
 
   async function loadProducts() {
     try {
