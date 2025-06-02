@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home – Robot No Signal</title>
+  <link rel="icon" href="/favicon-96x96.png">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #222;
+      color: #fff;
+      padding: 1rem 2rem;
+    }
+    header h1 { margin: 0; font-size: 1.5rem; }
+    nav a {
+      color: #fff;
+      margin-left: 1.5rem;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .avatar {
+      background: #ff6600;
+      color: #fff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1rem;
+      margin-left: 1rem;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    .card h3 { margin-top: 0; }
+    .product-img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+    }
+    .btn-member {
+      background-color: #ff6600;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome, <span id="user-email">...</span></h1>
+    <nav>
+      <a href="/shop.html">Shop</a>
+      <a href="/ended-auctions.html">Ended Auctions</a>
+      <span class="avatar" id="avatar">?</span>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div id="membership-banner"></div>
+    <h2>Your Uploaded Products</h2>
+    <div id="user-products"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailSpan = document.getElementById("user-email");
+    const avatarSpan = document.getElementById("avatar");
+    const membershipBanner = document.getElementById("membership-banner");
+    const userProducts = document.getElementById("user-products");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const email = user.email || "Anonymous";
+        emailSpan.innerText = email;
+        avatarSpan.innerText = email.charAt(0).toUpperCase();
+
+        const membershipRef = doc(db, "memberships", user.uid);
+        const membershipSnap = await getDoc(membershipRef);
+        const paidUntil = membershipSnap.exists() ? membershipSnap.data().paid_until?.seconds * 1000 : 0;
+        if (!paidUntil || paidUntil < Date.now()) {
+          membershipBanner.innerHTML = `<p><strong>You are not a member.</strong></p><button class="btn-member">Become a Member</button>`;
+        } else {
+          membershipBanner.innerHTML = `<p><strong>You are a member until:</strong> ${new Date(paidUntil).toLocaleDateString()}</p>`;
+        }
+
+        // Load user products
+        const q = query(collection(db, "products"), where("owner_uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          userProducts.innerHTML = "<p>You haven't uploaded any products yet.</p>";
+        } else {
+          querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+              <h3>${data.name}</h3>
+              <img src="${data.image_url}" alt="${data.name}" class="product-img" />
+              <p><strong>Description:</strong> ${data.description}</p>
+              <p><strong>Price:</strong> $${data.price}</p>
+            `;
+            userProducts.appendChild(div);
+          });
+        }
+
+      } else {
+        window.location.href = "/login.html";
+      }
+    });
+  </script>
+</body>
+</html>
