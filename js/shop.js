@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log("✅ Current user:", currentUser?.email || "None");
   console.log("✅ Is member:", isMember);
 
-  // ✅ 确保在身份检查完成后再加载商品
+  // ✅ 确保在身份 & 会员状态确认后再渲染商品
   await loadProducts();
 });
 
