@@ -86,73 +86,75 @@
     <p id="message"></p>
   </div>
 
- <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import {
-    getAuth,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    setPersistence,
-    browserSessionPersistence
-  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import { firebaseConfig } from "./firebase-config-raw.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      setPersistence,
+      browserSessionPersistence
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { firebaseConfig } from "./firebase-config-raw.js";
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-  // ✅ 设置登录状态为当前标签页有效 + 强制登出确保登录新鲜
-  await setPersistence(auth, browserSessionPersistence);
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      console.log("👋 Detected user on page load. Signing out...");
+    // ✅ 强制当前会话 + 登出旧用户
+    async function enforceSessionLogin() {
       try {
-        await signOut(auth);
-        console.log("✅ Signed out on load.");
+        await setPersistence(auth, browserSessionPersistence);
+        console.log("✅ Session persistence set.");
+
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            console.log("👋 Detected existing session. Signing out...");
+            try {
+              await signOut(auth);
+              console.log("✅ Signed out successfully on load.");
+            } catch (err) {
+              console.error("❌ Error signing out:", err);
+            }
+          }
+        });
       } catch (err) {
-        console.error("❌ Sign-out error:", err);
+        console.error("❌ Failed to set session persistence:", err);
       }
     }
-  });
 
-  // ✅ 登录表单逻辑
-  const form = document.getElementById("login-form");
-  const message = document.getElementById("message");
+    enforceSessionLogin();
 
- form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+    // ✅ 登录逻辑
+    const form = document.getElementById("login-form");
+    const message = document.getElementById("message");
 
-  try {
-    await setPersistence(auth, browserSessionPersistence);
-    await signInWithEmailAndPassword(auth, email, password);
-    console.log("✅ Login successful. Waiting for auth state confirmation...");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-    // ✅ 等待 Firebase 确认用户身份
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("✅ Auth state confirmed. Redirecting...");
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log("✅ Login successful.");
         message.style.color = "green";
         message.innerText = "Login successful. Redirecting...";
-        window.location.href = "/shop.html";
-      } else {
-        console.warn("⚠️ Auth state not yet available. Waiting...");
+        setTimeout(() => {
+          window.location.href = "/shop.html";
+        }, 1000);
+      } catch (error) {
+        console.error("Login failed:", error);
+        message.style.color = "red";
+        if (error.code === "auth/user-not-found") {
+          message.innerText = "No user found with this email.";
+        } else if (error.code === "auth/wrong-password") {
+          message.innerText = "Incorrect password. Please try again.";
+        } else {
+          message.innerText = "Login failed: " + error.message;
+        }
       }
     });
+  </script>
+</body>
+</html>
 
-  } catch (error) {
-    console.error("Login failed:", error);
-    message.style.color = "red";
-    if (error.code === "auth/user-not-found") {
-      message.innerText = "No user found with this email.";
-    } else if (error.code === "auth/wrong-password") {
-      message.innerText = "Incorrect password. Please try again.";
-    } else {
-      message.innerText = "Login failed: " + error.message;
-    }
-  }
-});
-
-</script>
