@@ -1,0 +1,63 @@
+// main.js - Home Page Logic
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config-raw.js";
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const greeting = document.getElementById("greeting");
+const productContainer = document.getElementById("uploaded-products");
+
+// Display uploaded products by current user
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    greeting.innerText = "Please log in to view your dashboard.";
+    return;
+  }
+
+  greeting.innerText = `Welcome, ${user.email}`;
+
+  try {
+    const productsRef = collection(db, "products");
+    const q = query(productsRef, where("uploader_uid", "==", user.uid));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      productContainer.innerHTML = "<p>You haven't uploaded any products yet.</p>";
+      return;
+    }
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const item = document.createElement("div");
+      item.className = "product-card";
+
+      item.innerHTML = `
+        <h3>${data.name}</h3>
+        <img src="${data.image_url}" alt="${data.name}" style="max-width: 150px;"/>
+        <p><strong>Starting Price:</strong> $${data.price}</p>
+        <p>${data.description}</p>
+        <p><strong>Status:</strong> ${Date.now() < data.ends_at?.seconds * 1000 ? "Active" : "Expired"}</p>
+      `;
+
+      productContainer.appendChild(item);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load uploaded products:", err);
+    productContainer.innerText = "Error loading your uploaded products.";
+  }
+});
