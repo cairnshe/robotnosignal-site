@@ -1,6 +1,6 @@
 console.log("✅ shop.html script started");
 
-import { db, auth } from '../firebase-config.js';
+import { db, auth } from '/firebase-config.js';
 
 console.log("✅ Firebase modules imported", auth);
 
