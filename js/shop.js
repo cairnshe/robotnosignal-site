@@ -139,7 +139,7 @@ async function loadProducts() {
       if (!isMember) {
         input.disabled = true;
         btn.disabled = true;
-        err.innerHTML = `Log in / <a href='/signup'>Sign up</a> before bidding!`;
+       err.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
       } else {
         input.disabled = false;
         btn.disabled = false;
