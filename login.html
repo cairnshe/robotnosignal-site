@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login – Robot No Signal</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
@@ -20,13 +18,8 @@
       align-items: center;
       justify-content: center;
     }
-    .logo {
-      margin-bottom: 0.5rem;
-    }
-    h1 {
-      color: #ff6600;
-      margin-bottom: 2rem;
-    }
+    .logo { margin-bottom: 0.5rem; }
+    h1 { color: #ff6600; margin-bottom: 2rem; }
     .form-container {
       background: #fff;
       border: 1px solid #ddd;
@@ -54,13 +47,8 @@
       cursor: pointer;
       border-radius: 4px;
     }
-    button:hover {
-      background-color: #e65c00;
-    }
-    #message {
-      margin-top: 1rem;
-      color: red;
-    }
+    button:hover { background-color: #e65c00; }
+    #message { margin-top: 1rem; color: red; }
     .small-link {
       margin-top: 1rem;
       font-size: 0.9rem;
@@ -87,56 +75,58 @@
   </div>
 
   <script type="module">
-   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  setPersistence,
-  browserSessionPersistence
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { firebaseConfig } from "./firebase-config-raw.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      setPersistence,
+      browserSessionPersistence
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { firebaseConfig } from "./firebase-config-raw.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-// ✅ 设置只允许当前标签页登录
-await setPersistence(auth, browserSessionPersistence);
+    // ✅ 设置 session-only 登录
+    await setPersistence(auth, browserSessionPersistence);
 
-// ✅ 登录表单逻辑
-const form = document.getElementById("login-form");
-const message = document.getElementById("message");
+    // ✅ 登录逻辑
+    const form = document.getElementById("login-form");
+    const message = document.getElementById("message");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    console.log("✅ Login successful. Waiting for auth state change...");
-  } catch (error) {
-    console.error("Login failed:", error);
-    message.style.color = "red";
-    if (error.code === "auth/user-not-found") {
-      message.innerText = "No user found with this email.";
-    } else if (error.code === "auth/wrong-password") {
-      message.innerText = "Incorrect password. Please try again.";
-    } else {
-      message.innerText = "Login failed: " + error.message;
-    }
-  }
-});
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log("✅ Login successful. Waiting for confirmation...");
+        message.style.color = "green";
+        message.innerText = "Login successful. Redirecting...";
 
-// ✅ 监听 auth 状态，确认后跳转
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("✅ Auth state confirmed. Redirecting...");
-    message.style.color = "green";
-    message.innerText = "Login successful. Redirecting...";
-    setTimeout(() => {
-      window.location.href = "/shop.html";
-    }, 1000);
-  }
-});
+        // ✅ 等待 Firebase 登录状态变更确认再跳转
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            console.log("✅ Auth state confirmed. Redirecting to /shop.html");
+            unsubscribe(); // 停止监听
+            window.location.href = "/shop.html";
+          }
+        });
+      } catch (error) {
+        console.error("Login failed:", error);
+        message.style.color = "red";
+        if (error.code === "auth/user-not-found") {
+          message.innerText = "No user found with this email.";
+        } else if (error.code === "auth/wrong-password") {
+          message.innerText = "Incorrect password. Please try again.";
+        } else {
+          message.innerText = "Login failed: " + error.message;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
