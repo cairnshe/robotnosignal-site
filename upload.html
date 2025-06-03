@@ -11,7 +11,7 @@
     <div class="flex gap-4 items-center">
       <a href="/shop.html" class="hover:underline">🛍️ Shop</a>
       <a href="/main.html" class="hover:underline">🏠 My Home</a>
-      <span class="font-bold text-lg">Upload Product</span>
+      <span class="font-bold text-lg">📤 Upload Product</span>
     </div>
     <button id="logout-btn" class="text-sm hover:underline">Logout</button>
   </nav>
@@ -20,14 +20,16 @@
     <h2 class="text-2xl font-bold mb-6">Upload a New Product</h2>
     <form id="upload-form" class="space-y-4">
       <input type="text" id="name" placeholder="Product Name" required class="w-full border p-2 rounded" />
-      <textarea id="description" placeholder="Description" required class="w-full border p-2 rounded"></textarea>
-      <input type="number" id="price" placeholder="Starting Price (USD)" required class="w-full border p-2 rounded" />
-      <input type="url" id="image_url" placeholder="Image URL (use GitHub/raw temporarily)" required class="w-full border p-2 rounded" />
+      <textarea id="description" placeholder="Product Description" required class="w-full border p-2 rounded"></textarea>
+      <input type="number" id="price" placeholder="Starting Price (CAD)" required class="w-full border p-2 rounded" />
+      <input type="url" id="image_url" placeholder="Image URL (GitHub/raw link temporarily)" required class="w-full border p-2 rounded" />
+      <label for="ends_at" class="block text-sm font-medium text-gray-700">⏰ Auction Ends At</label>
       <input type="datetime-local" id="ends_at" required class="w-full border p-2 rounded" />
+
       <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded w-full">
-        Submit Product
+        Upload Product
       </button>
-      <p id="message" class="text-center text-sm"></p>
+      <p id="message" class="text-center text-sm text-red-600"></p>
     </form>
   </main>
 
@@ -41,9 +43,7 @@
       collection,
       addDoc,
       serverTimestamp,
-      Timestamp,
-      doc,
-      getDoc
+      Timestamp
     } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const form = document.getElementById("upload-form");
@@ -52,28 +52,11 @@
 
     let currentUser = null;
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "/login.html";
-        return;
-      }
-      currentUser = user;
-
-      // 检查会员资格
-      try {
-        const memberRef = doc(db, "memberships", user.uid);
-        const memberSnap = await getDoc(memberRef);
-        const paidUntil = memberSnap.data()?.paid_until?.seconds * 1000;
-        if (!paidUntil || paidUntil < Date.now()) {
-          message.style.color = "red";
-          message.innerText = "⛔️ You must be a member to upload products.";
-          form.style.display = "none";
-        }
-      } catch (err) {
-        console.error("Membership check failed:", err);
-        message.style.color = "red";
-        message.innerText = "⚠️ Unable to verify membership.";
-        form.style.display = "none";
+      } else {
+        currentUser = user;
       }
     });
 
@@ -85,9 +68,8 @@
       const imageUrl = document.getElementById("image_url").value.trim();
       const endsAtRaw = document.getElementById("ends_at").value;
 
-      if (!name || !description || !imageUrl || isNaN(price) || !endsAtRaw) {
-        message.style.color = "red";
-        message.innerText = "❌ Please fill out all fields correctly.";
+      if (!name || !description || !imageUrl || isNaN(price)) {
+        message.innerText = "Please fill out all fields.";
         return;
       }
 
@@ -99,7 +81,7 @@
           description,
           price,
           starting_bid: price,
-          current_bid: price,
+          current_bid: 0,
           image_url: imageUrl,
           ends_at: endsAt,
           uploader_uid: currentUser.uid,
