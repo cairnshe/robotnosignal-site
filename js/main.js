@@ -1,81 +1,88 @@
-console.log("✅ main.js started");
-
-import { db, auth } from './firebase-config.js';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
+import { auth, db } from '../firebase-config.js';
 import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-const usernameEl = document.getElementById("username");
-const avatarEl = document.getElementById("avatar");
-const productListEl = document.getElementById("product-list");
-const membershipStatusEl = document.getElementById("membership-status");
-const becomeMemberBtn = document.getElementById("become-member");
+const avatarEl = document.getElementById("user-avatar");
+const logoutLink = document.getElementById("logout-link");
+const membershipBtn = document.getElementById("membership-btn");
+const productsDiv = document.getElementById("my-products");
 
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    console.log("👤 Logged in user:", user.email);
-    usernameEl.innerText = user.email;
-    avatarEl.src = `https://api.dicebear.com/7.x/thumbs/svg?seed=${user.uid}`; // 头像图标
+  if (!user) {
+    window.location.href = "/login.html";
+    return;
+  }
 
-    // 检查会员状态
-    const membershipRef = doc(db, "memberships", user.uid);
-    const membershipSnap = await getDoc(membershipRef);
-    let isMember = false;
+  // 显示头像（若有）
+  if (user.photoURL) {
+    avatarEl.src = user.photoURL;
+  }
 
-    if (membershipSnap.exists()) {
-      const paidUntil = membershipSnap.data().paid_until;
-      if (paidUntil?.seconds * 1000 > Date.now()) {
-        isMember = true;
+  // 加载用户是否为会员
+  try {
+    const memberRef = doc(db, "memberships", user.uid);
+    const memberSnap = await getDoc(memberRef);
+    if (memberSnap.exists()) {
+      const paidUntil = memberSnap.data().paid_until?.seconds * 1000;
+      if (paidUntil > Date.now()) {
+        membershipBtn.innerText = "✅ Already a Member";
+        membershipBtn.disabled = true;
       }
     }
+  } catch (e) {
+    console.error("Failed to load membership:", e);
+  }
 
-    membershipStatusEl.innerText = isMember
-      ? "✅ You are a current member."
-      : "❌ You are not a member.";
-
-    if (!isMember) {
-      becomeMemberBtn.style.display = "inline-block";
-    }
-
-    // 加载用户上传的商品
+  // 加载用户上传的商品
+  try {
     const q = query(collection(db, "products"), where("uploader_uid", "==", user.uid));
-    const querySnapshot = await getDocs(q);
-    productListEl.innerHTML = '';
+    const querySnap = await getDocs(q);
 
-    if (querySnapshot.empty) {
-      productListEl.innerHTML = '<p>No products uploaded yet.</p>';
+    if (querySnap.empty) {
+      productsDiv.innerHTML = "<p>You haven't uploaded any products yet.</p>";
     } else {
-      querySnapshot.forEach((docSnap) => {
+      querySnap.forEach((docSnap) => {
         const data = docSnap.data();
         const item = document.createElement("div");
         item.className = "product";
         item.innerHTML = `
           <h3>${data.name}</h3>
-          <img src="${data.image_url}" alt="${data.name}" width="200" />
-          <p><strong>Price:</strong> $${data.price}</p>
+          <img src="${data.image_url}" alt="${data.name}" />
           <p><strong>Description:</strong> ${data.description}</p>
+          <p><strong>Price:</strong> $${data.price}</p>
+          <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
         `;
-        productListEl.appendChild(item);
+        productsDiv.appendChild(item);
       });
     }
-  } else {
-    console.warn("⚠️ No user logged in. Redirecting to login...");
-    window.location.href = "/login.html";
+  } catch (err) {
+    console.error("Failed to load user products:", err);
+    productsDiv.innerText = "Failed to load your products.";
   }
 });
 
-// 退出登录功能
-document.getElementById("logout-btn").addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "/login.html";
+// 退出登录按钮
+logoutLink.addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    await signOut(auth);
+    window.location.href = "/login.html";
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+});
+
+// 成为会员按钮逻辑（跳转/引导）
+membershipBtn.addEventListener("click", () => {
+  alert("To become a member, please contact admin or submit payment info.");
 });
