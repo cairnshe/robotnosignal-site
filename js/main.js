@@ -29,19 +29,27 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // 加载用户是否为会员
-  try {
-    const memberRef = doc(db, "memberships", user.uid);
-    const memberSnap = await getDoc(memberRef);
-    if (memberSnap.exists()) {
-      const paidUntil = memberSnap.data().paid_until?.seconds * 1000;
-      if (paidUntil > Date.now()) {
-        membershipBtn.innerText = "✅ Already a Member";
-        membershipBtn.disabled = true;
-      }
+ // 加载用户是否为会员
+try {
+  const memberRef = doc(db, "memberships", user.uid);
+  const memberSnap = await getDoc(memberRef);
+  if (memberSnap.exists()) {
+    const paidUntil = memberSnap.data().paid_until?.seconds * 1000;
+    if (paidUntil > Date.now()) {
+      membershipBtn.innerText = "✅ Already a Member";
+      membershipBtn.disabled = true;
+    } else {
+      const cta = document.createElement("a");
+      cta.href = "/membership.html";
+      cta.innerText = "🔑 Become a Member to Upload and Bid";
+      cta.className = "inline-block mt-4 bg-yellow-400 text-black px-4 py-2 rounded font-bold hover:bg-yellow-500 transition";
+      document.querySelector("main").appendChild(cta);
     }
-  } catch (e) {
-    console.error("Failed to load membership:", e);
   }
+} catch (e) {
+  console.error("Failed to load membership:", e);
+}
+
 
   // 加载用户上传的商品
   try {
