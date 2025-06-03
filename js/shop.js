@@ -100,7 +100,9 @@ async function loadProducts() {
         <h2>${product.name}</h2>
         <img src="${product.image_url}" alt="${product.name}" />
         <p><strong>Starting Price:</strong> $${product.price}</p>
-        <p><strong>Current Price:</strong> $${highest}</p>
+       <p><strong>Current Bid:</strong> ${
+  bids.length > 0 ? `$${highest}` : '<em>No bids yet</em>'
+}</p>
         <p>${product.description}</p>
         <p><strong>Seller:</strong> ${product.seller_name}</p>
         <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
