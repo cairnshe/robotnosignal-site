@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Product – Robot No Signal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"/>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <nav class="bg-orange-500 text-white px-6 py-4 flex justify-between items-center">
+    <div class="flex gap-4 items-center">
+      <a href="/shop.html" class="hover:underline">🛍️ Shop</a>
+      <a href="/main.html" class="hover:underline">🏠 My Home</a>
+      <span class="font-bold text-lg">Upload Product</span>
+    </div>
+    <button id="logout-btn" class="text-sm hover:underline">Logout</button>
+  </nav>
+
+  <main class="max-w-xl mx-auto mt-10 p-6 bg-white rounded-lg shadow">
+    <h2 class="text-2xl font-bold mb-6">Upload a New Product</h2>
+    <form id="upload-form" class="space-y-4">
+      <input type="text" id="name" placeholder="Product Name" required class="w-full border p-2 rounded" />
+      <textarea id="description" placeholder="Description" required class="w-full border p-2 rounded"></textarea>
+      <input type="number" id="price" placeholder="Starting Price (USD)" required class="w-full border p-2 rounded" />
+      <input type="url" id="image_url" placeholder="Image URL (use GitHub/raw temporarily)" required class="w-full border p-2 rounded" />
+      <input type="datetime-local" id="ends_at" required class="w-full border p-2 rounded" />
+      <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded w-full">
+        Submit Product
+      </button>
+      <p id="message" class="text-center text-sm text-red-600"></p>
+    </form>
+  </main>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import {
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import {
+      collection,
+      addDoc,
+      serverTimestamp,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const form = document.getElementById("upload-form");
+    const message = document.getElementById("message");
+    const logoutBtn = document.getElementById("logout-btn");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+      } else {
+        currentUser = user;
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const price = parseFloat(document.getElementById("price").value);
+      const imageUrl = document.getElementById("image_url").value.trim();
+      const endsAtRaw = document.getElementById("ends_at").value;
+
+      if (!name || !description || !imageUrl || isNaN(price)) {
+        message.innerText = "Please fill out all fields.";
+        return;
+      }
+
+      const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
+
+      try {
+        await addDoc(collection(db, "products"), {
+          name,
+          description,
+          price,
+          starting_bid: price,
+          current_bid: 0,
+          image_url: imageUrl,
+          ends_at: endsAt,
+          uploader_uid: currentUser.uid,
+          seller_name: currentUser.email || "anonymous",
+          created_at: serverTimestamp(),
+          bids: []
+        });
+        message.style.color = "green";
+        message.innerText = "✅ Product uploaded successfully!";
+        form.reset();
+      } catch (err) {
+        console.error("Upload failed:", err);
+        message.style.color = "red";
+        message.innerText = "❌ Upload failed. Try again.";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "/login.html";
+    });
+  </script>
+</body>
+</html>
