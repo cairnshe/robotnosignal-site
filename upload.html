@@ -92,9 +92,12 @@
           created_at: serverTimestamp(),
           bids: []
         });
-        message.style.color = "green";
-        message.innerText = "✅ Product uploaded successfully!";
-        form.reset();
+message.style.color = "green";
+message.innerText = "✅ Product uploaded successfully! Redirecting...";
+setTimeout(() => {
+  window.location.href = "/main.html";
+}, 1200);
+
       } catch (err) {
         console.error("Upload failed:", err);
         message.style.color = "red";
