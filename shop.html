@@ -76,12 +76,52 @@
     <a href="/ended-auctions.html" class="btn">Ended Auctions</a>
   </div>
 
-  <h1>Ongoing Auctions</h1>
+ <h1>Ongoing Auctions</h1>
   <div id="product-list">Loading products...</div>
 
-  <!-- ✅ 加载外部模块化脚本 -->
-<script type="module" src="js/shop.js"></script>
-<a href="/upload.html" class="fab-upload" title="Upload Product">＋</a>
+  <!-- ✅ 固定上传按钮，注意顺序！必须在脚本前 -->
+  <a href="/upload.html" class="fab-upload" title="Upload Product">＋</a>
 
+  <!-- ✅ 加载产品逻辑 -->
+  <script type="module" src="js/shop.js"></script>
+
+  <!-- ✅ 控制上传按钮权限 -->
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const fabBtn = document.querySelector('.fab-upload');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        fabBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          alert("❗ Please log in first to upload.");
+          window.location.href = "/login.html";
+        });
+      } else {
+        try {
+          const memberRef = doc(db, "memberships", user.uid);
+          const memberSnap = await getDoc(memberRef);
+          const paidUntil = memberSnap.data()?.paid_until?.seconds * 1000;
+          if (!memberSnap.exists() || paidUntil <= Date.now()) {
+            fabBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              alert("🔒 Uploading is restricted to members. Please become a member first.");
+              window.location.href = "/membership.html";
+            });
+          }
+        } catch (err) {
+          console.error("Membership check failed:", err);
+          fabBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert("⚠️ Error verifying membership. Try again later.");
+          });
+        }
+      }
+    });
+  </script>
 
 </body>
+</html>
