@@ -27,7 +27,7 @@
       <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded w-full">
         Submit Product
       </button>
-      <p id="message" class="text-center text-sm text-red-600"></p>
+      <p id="message" class="text-center text-sm"></p>
     </form>
   </main>
 
@@ -41,7 +41,9 @@
       collection,
       addDoc,
       serverTimestamp,
-      Timestamp
+      Timestamp,
+      doc,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const form = document.getElementById("upload-form");
@@ -50,11 +52,28 @@
 
     let currentUser = null;
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "/login.html";
-      } else {
-        currentUser = user;
+        return;
+      }
+      currentUser = user;
+
+      // 检查会员资格
+      try {
+        const memberRef = doc(db, "memberships", user.uid);
+        const memberSnap = await getDoc(memberRef);
+        const paidUntil = memberSnap.data()?.paid_until?.seconds * 1000;
+        if (!paidUntil || paidUntil < Date.now()) {
+          message.style.color = "red";
+          message.innerText = "⛔️ You must be a member to upload products.";
+          form.style.display = "none";
+        }
+      } catch (err) {
+        console.error("Membership check failed:", err);
+        message.style.color = "red";
+        message.innerText = "⚠️ Unable to verify membership.";
+        form.style.display = "none";
       }
     });
 
@@ -66,8 +85,9 @@
       const imageUrl = document.getElementById("image_url").value.trim();
       const endsAtRaw = document.getElementById("ends_at").value;
 
-      if (!name || !description || !imageUrl || isNaN(price)) {
-        message.innerText = "Please fill out all fields.";
+      if (!name || !description || !imageUrl || isNaN(price) || !endsAtRaw) {
+        message.style.color = "red";
+        message.innerText = "❌ Please fill out all fields correctly.";
         return;
       }
 
@@ -79,7 +99,7 @@
           description,
           price,
           starting_bid: price,
-          current_bid: 0,
+          current_bid: price,
           image_url: imageUrl,
           ends_at: endsAt,
           uploader_uid: currentUser.uid,
