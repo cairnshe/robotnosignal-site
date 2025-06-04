@@ -77,9 +77,9 @@ onAuthStateChanged(auth, async (user) => {
       console.error("❌ Error checking membership:", e);
     }
 
-    if (emailSpan) {
-      emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!${memberUntilText}`;
-    }
+   if (emailSpan) {
+  emailSpan.innerHTML = `${prefix}Welcome Back, <span title="Member until: ${year}-${month}-${day}" style="text-decoration: underline dotted; cursor: help;">${user.email}</span>!`;
+}
 
     console.log("✅ Current user:", currentUser?.email || "None");
     console.log("✅ Is member:", isMember);
