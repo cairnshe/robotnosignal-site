@@ -51,27 +51,34 @@ if (user) {
   console.log("🔍 UID is:", user.uid);
 
   currentUser = user;
-  const emailSpan = document.getElementById("user-email");
-  let prefix = "";
+ const emailSpan = document.getElementById("user-email");
+let prefix = "";
+let memberUntilText = "";
 
-  try {
-    const ref = doc(db, "memberships", user.uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      const paidUntil = snap.data().paid_until;
-      console.log("📅 paid_until timestamp:", paidUntil);
-      if (paidUntil?.seconds * 1000 > Date.now()) {
-        isMember = true;
-        prefix = "👑 ";
-      }
-    } else {
-      console.warn("⚠️ No membership document found for this user.");
+try {
+  const ref = doc(db, "memberships", user.uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const paidUntil = snap.data().paid_until;
+    console.log("📅 paid_until timestamp:", paidUntil);
+    if (paidUntil?.seconds * 1000 > Date.now()) {
+      isMember = true;
+      prefix = "👑 ";
+      const dateObj = new Date(paidUntil.seconds * 1000);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      memberUntilText = ` (Member until: ${year}-${month}-${day})`;
     }
-  } catch (e) {
-    console.error("❌ Error checking membership:", e);
+  } else {
+    console.warn("⚠️ No membership document found for this user.");
   }
+} catch (e) {
+  console.error("❌ Error checking membership:", e);
+}
 
-  if (emailSpan) emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!`;
+if (emailSpan) {
+  emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!${memberUntilText}`;
 }
 
 
