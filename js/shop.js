@@ -47,44 +47,50 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   isMember = false;
 
-if (user) {
-  console.log("🔍 UID is:", user.uid);
+  if (user) {
+    console.log("🔍 UID is:", user.uid);
 
-  currentUser = user;
- const emailSpan = document.getElementById("user-email");
-let prefix = "";
-let memberUntilText = "";
+    currentUser = user;
+    const emailSpan = document.getElementById("user-email");
+    let prefix = "";
+    let memberUntilText = "";
 
-try {
-  const ref = doc(db, "memberships", user.uid);
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
-    const paidUntil = snap.data().paid_until;
-    console.log("📅 paid_until timestamp:", paidUntil);
-    if (paidUntil?.seconds * 1000 > Date.now()) {
-      isMember = true;
-      prefix = "👑 ";
-      const dateObj = new Date(paidUntil.seconds * 1000);
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      memberUntilText = ` (Member until: ${year}-${month}-${day})`;
+    try {
+      const ref = doc(db, "memberships", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const paidUntil = snap.data().paid_until;
+        console.log("📅 paid_until timestamp:", paidUntil);
+        if (paidUntil?.seconds * 1000 > Date.now()) {
+          isMember = true;
+          prefix = "👑 ";
+          const dateObj = new Date(paidUntil.seconds * 1000);
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          memberUntilText = ` (Member until: ${year}-${month}-${day})`;
+        }
+      } else {
+        console.warn("⚠️ No membership document found for this user.");
+      }
+    } catch (e) {
+      console.error("❌ Error checking membership:", e);
     }
+
+    if (emailSpan) {
+      emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!${memberUntilText}`;
+    }
+
+    console.log("✅ Current user:", currentUser?.email || "None");
+    console.log("✅ Is member:", isMember);
+
+    // ✅ 只有登录后才加载产品
+    loadProducts();
   } else {
-    console.warn("⚠️ No membership document found for this user.");
+    // ❗️未登录，跳转到登录页（或提示）
+    console.warn("⚠️ User not logged in. Redirecting to login...");
+    window.location.href = "/login.html";
   }
-} catch (e) {
-  console.error("❌ Error checking membership:", e);
-}
-
-if (emailSpan) {
-  emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!${memberUntilText}`;
-}
-
-
-  console.log("✅ Current user:", currentUser?.email || "None");
-  console.log("✅ Is member:", isMember);
-  loadProducts();
 });
 
 async function loadProducts() {
