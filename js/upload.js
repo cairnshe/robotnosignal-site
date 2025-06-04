@@ -11,6 +11,7 @@ import {
 // DOM 元素
 const form = document.getElementById("upload-form");
 const message = document.getElementById("message");
+const submitBtn = document.getElementById("submit-btn");
 
 // 用户状态
 let currentUser = null;
@@ -43,6 +44,8 @@ onAuthStateChanged(auth, async (user) => {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   message.innerText = "";
+  submitBtn.disabled = true;
+submitBtn.innerText = "Uploading...";
 
   if (!currentUser || !isMember) {
     message.innerText = "⛔️ Only logged-in members can upload.";
@@ -76,12 +79,16 @@ form.addEventListener("submit", async (e) => {
       created_at: serverTimestamp()
     });
 
-    form.reset();
+  form.reset();
     message.style.color = "green";
     message.innerText = "✅ Product uploaded successfully!";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
   } catch (err) {
     console.error("Upload failed:", err);
     message.style.color = "red";
     message.innerText = "❌ Upload failed. Try again.";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
   }
 });
