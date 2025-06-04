@@ -1,19 +1,25 @@
-// signup.js
+// ✅ signup.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
+  getAuth,
   createUserWithEmailAndPassword,
   setPersistence,
   browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { auth } from "../firebase-config.js";  // 相对路径根据你实际目录可能需要调整
+import { firebaseConfig } from './firebase-config-raw.js'; // ✅ 保持这个路径正确
 
-// 设置为 session-only（关闭浏览器后自动登出）
+// ✅ 初始化 Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// ✅ 设置为 session-only（关闭浏览器后自动登出）
 await setPersistence(auth, browserSessionPersistence);
 
-// 获取 DOM 元素
+// ✅ 获取 DOM 元素
 const form = document.getElementById("signup-form");
 const message = document.getElementById("message");
 
-// 监听注册表单提交
+// ✅ 注册逻辑
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = document.getElementById("email").value.trim();
@@ -24,6 +30,7 @@ form.addEventListener("submit", async (e) => {
     message.style.color = "green";
     message.innerText = "🎉 Signup successful! Redirecting...";
     console.log("✅ Signup successful. Redirecting to /shop.html");
+
     setTimeout(() => {
       window.location.href = "/shop.html";
     }, 1000);
