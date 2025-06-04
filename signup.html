@@ -50,6 +50,9 @@
     }
     #message {
       color: red;
+      margin-top: -0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -61,32 +64,13 @@
     <form id="signup-form">
       <input type="email" id="email" placeholder="Email" required />
       <input type="password" id="password" placeholder="Password" required />
+      <p id="message"></p>
       <button type="submit">Sign Up</button>
     </form>
-    <p id="message"></p>
-    <p>Already have an account? <a href="/login">Log in here.</a></p>
+    <p>Already have an account? <a href="/login.html">Log in here.</a></p>
   </div>
 
-  <script type="module">
-    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { auth } from "./firebase-config.js";
-
-    const form = document.getElementById("signup-form");
-    const message = document.getElementById("message");
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        message.innerText = "Signup successful! Redirecting...";
-        window.location.href = "/shop.html";
-      } catch (error) {
-        message.innerText = error.message;
-      }
-    });
-  </script>
+  <!-- ✅ 外部脚本：signup.js -->
+  <script type="module" src="/js/signup.js"></script>
 </body>
 </html>
