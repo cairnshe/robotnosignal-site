@@ -54,6 +54,7 @@ onAuthStateChanged(auth, async (user) => {
     const emailSpan = document.getElementById("user-email");
     let prefix = "";
     let memberUntilText = "";
+    let tooltipText = "";
 
     try {
       const ref = doc(db, "memberships", user.uid);
