@@ -49,6 +49,9 @@ onAuthStateChanged(auth, async (user) => {
 
   if (user) {
     console.log("🔍 UID is:", user.uid);
+    const emailSpan = document.getElementById("user-email");
+if (emailSpan) emailSpan.innerText = `👤 ${user.email}`;
+
     try {
       const ref = doc(db, "memberships", user.uid);
       const snap = await getDoc(ref);
