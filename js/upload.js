@@ -5,7 +5,9 @@ import {
 import {
   collection,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // DOM 元素
@@ -25,9 +27,11 @@ onAuthStateChanged(auth, async (user) => {
   }
   currentUser = user;
 
-  try {
-    const docRef = await db.collection("memberships").doc(user.uid).get();
-    const paidUntil = docRef.data()?.paid_until?.seconds * 1000;
+ try {
+  const docRef = doc(db, "memberships", user.uid);
+  const docSnap = await getDoc(docRef);
+  const paidUntil = docSnap.data()?.paid_until?.seconds * 1000;
+
     if (paidUntil && paidUntil > Date.now()) {
       isMember = true;
     } else {
