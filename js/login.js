@@ -7,7 +7,7 @@ import {
   setPersistence,
   browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { firebaseConfig } from "../firebase-config-raw.js";
+import { firebaseConfig } from "./firebase-config-raw.js";
 
 console.log("🚀 Firebase Config:", firebaseConfig);
 
