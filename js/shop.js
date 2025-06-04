@@ -47,27 +47,33 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   isMember = false;
 
-  if (user) {
-    console.log("🔍 UID is:", user.uid);
-    const emailSpan = document.getElementById("user-email");
-if (emailSpan) emailSpan.innerText = `Welcome Back, ${user.email}!`;
+if (user) {
+  console.log("🔍 UID is:", user.uid);
 
-    try {
-      const ref = doc(db, "memberships", user.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const paidUntil = snap.data().paid_until;
-        console.log("📅 paid_until timestamp:", paidUntil);
-        if (paidUntil?.seconds * 1000 > Date.now()) {
-          isMember = true;
-        }
-      } else {
-        console.warn("⚠️ No membership document found for this user.");
+  currentUser = user;
+  const emailSpan = document.getElementById("user-email");
+  let prefix = "";
+
+  try {
+    const ref = doc(db, "memberships", user.uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const paidUntil = snap.data().paid_until;
+      console.log("📅 paid_until timestamp:", paidUntil);
+      if (paidUntil?.seconds * 1000 > Date.now()) {
+        isMember = true;
+        prefix = "👑 ";
       }
-    } catch (e) {
-      console.error("❌ Error checking membership:", e);
+    } else {
+      console.warn("⚠️ No membership document found for this user.");
     }
+  } catch (e) {
+    console.error("❌ Error checking membership:", e);
   }
+
+  if (emailSpan) emailSpan.innerText = `${prefix}Welcome Back, ${user.email}!`;
+}
+
 
   console.log("✅ Current user:", currentUser?.email || "None");
   console.log("✅ Is member:", isMember);
