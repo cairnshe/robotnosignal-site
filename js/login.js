@@ -1,4 +1,4 @@
-// ✅ login.js
+// ✅ login.js debug enhanced
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getAuth,
@@ -9,11 +9,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { firebaseConfig } from "../firebase-config-raw.js";
 
+console.log("🚀 Firebase Config:", firebaseConfig);
+
 // ✅ 初始化 Firebase 应用
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// ✅ 登录逻辑主函数（必须封装在 async 函数中）
+console.log("✅ Firebase initialized.");
+
 async function setupLogin() {
   try {
     await setPersistence(auth, browserSessionPersistence);
@@ -29,29 +32,35 @@ async function setupLogin() {
 
       message.style.color = "black";
       message.innerText = "⏳ Logging in...";
+      console.log("📨 Attempting login with:", email);
 
       try {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         console.log("✅ Login succeeded:", userCred.user);
-
         message.style.color = "green";
         message.innerText = "Login successful. Redirecting...";
 
-        // ✅ 等待 Firebase 确认登录状态
         const unsubscribe = onAuthStateChanged(auth, (user) => {
           console.log("👀 Auth state changed:", user);
           if (user) {
-            unsubscribe(); // 停止监听
+            unsubscribe();
             setTimeout(() => {
               window.location.href = "/shop.html";
-            }, 1000); // 给用户1秒看提示
+            }, 1000);
           }
         });
 
-      } catch (error) {
-        console.error("❌ Login error:", error);
-        message.style.color = "red";
+        // 如果 auth.currentUser 立刻就有值，也跳转
+        if (auth.currentUser) {
+          console.log("🎯 Immediate user detected:", auth.currentUser);
+          setTimeout(() => {
+            window.location.href = "/shop.html";
+          }, 1000);
+        }
 
+      } catch (error) {
+        console.error("❌ Login failed:", error);
+        message.style.color = "red";
         if (error.code === "auth/user-not-found") {
           message.innerText = "No user found with this email.";
         } else if (error.code === "auth/wrong-password") {
@@ -70,5 +79,4 @@ async function setupLogin() {
   }
 }
 
-// ✅ 启动登录逻辑
 setupLogin();
