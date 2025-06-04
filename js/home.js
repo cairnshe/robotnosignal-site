@@ -13,12 +13,8 @@ import {
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // 获取页面元素
 const emailSpan = document.getElementById("user-email");
