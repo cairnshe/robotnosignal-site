@@ -89,10 +89,10 @@ onAuthStateChanged(auth, async (user) => {
 
     // ✅ 只有登录后才加载产品
     loadProducts();
-  } else {
-    // ❗️未登录，跳转到登录页（或提示）
-    console.warn("⚠️ User not logged in. Redirecting to login...");
-    window.location.href = "/login.html";
+   } else {
+    console.warn("⚠️ User not logged in.");
+    const list = document.getElementById('product-list');
+    list.innerHTML = `<p class="error">❗ Please log in to view products.</p>`;
   }
 });
 
