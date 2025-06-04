@@ -71,13 +71,16 @@
 </head>
 <body>
 
-<div class="nav-buttons" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-  <div>
+<div style="position: relative; margin-bottom: 2rem;">
+  <!-- 用户信息浮动在右上角 -->
+  <div style="position: absolute; right: 0; top: 0;">
+    <span id="user-email" style="color: #333; font-size: 0.95rem; opacity: 0.75;"></span>
+  </div>
+
+  <!-- 中间居中的按钮组 -->
+  <div class="nav-buttons" style="display: flex; justify-content: center; gap: 2rem;">
     <a href="/index.html" class="btn">⬅ Back to Home Page</a>
     <a href="/ended-auctions.html" class="btn">Ended Auctions</a>
-  </div>
-  <div>
-    <span id="user-email" style="color: #333; font-size: 0.95rem; opacity: 0.75;"></span>
   </div>
 </div>
 
