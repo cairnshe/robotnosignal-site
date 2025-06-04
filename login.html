@@ -110,9 +110,9 @@
         // ✅ 等待 Firebase 登录状态变更确认再跳转
         const unsubscribe = onAuthStateChanged(auth, (user) => {
           if (user) {
-            console.log("✅ Auth state confirmed. Redirecting to /main.html");
+            console.log("✅ Auth state confirmed. Redirecting to /shop.html");
             unsubscribe(); // 停止监听
-            window.location.href = "/main.html";
+            window.location.href = "/shop.html";
           }
         });
       } catch (error) {
