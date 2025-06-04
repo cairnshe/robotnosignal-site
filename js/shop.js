@@ -78,8 +78,9 @@ onAuthStateChanged(auth, async (user) => {
     }
 
    if (emailSpan) {
-  emailSpan.innerHTML = `${prefix}Welcome Back, <span title="Member until: ${year}-${month}-${day}" style="text-decoration: underline dotted; cursor: help;">${user.email}</span>!`;
-}
+ const tooltipText = memberUntilText ? `title="${memberUntilText.trim()}"` : "";
+emailSpan.innerHTML = `${prefix}Welcome Back, <span ${tooltipText} style="text-decoration: underline dotted; cursor: help;">${user.email}</span>!`;
+
 
     console.log("✅ Current user:", currentUser?.email || "None");
     console.log("✅ Is member:", isMember);
