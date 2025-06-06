@@ -211,8 +211,8 @@ window.placeBid = async function(productId, currentBid) {
     minIncrement = 2;
   }
 
-  if (isNaN(maxBid) || maxBid <= currentBid) {
-    error.innerText = `Your MAX bid must be greater than current bid ($${currentBid}).`;
+  if (isNaN(maxBid)) {
+    error.innerText = `Please enter a valid number.`;
     return;
   }
 
@@ -222,23 +222,38 @@ window.placeBid = async function(productId, currentBid) {
     const productData = productSnap.data();
 
     const bids = productData.bids || [];
-    const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : productData.starting_bid || 0;
-    const highestEffectiveBid = productData.current_bid || productData.starting_bid || 0;
+    const startingBid = productData.starting_bid || 0;
+    const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : startingBid;
+    const highestEffectiveBid = productData.current_bid || 0;
 
     let newEffectiveBid = highestEffectiveBid;
 
-    if (maxBid > highestMaxBid) {
-      // 你出价最高 → 系统自动加 1 步
-      newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
-    } else if (maxBid === highestMaxBid) {
-      // 平局 → 也加 1 步
-      newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+    // ✅ 1️⃣ 特别处理首 bid：必须 ≥ starting_bid + minIncrement
+    if (bids.length === 0) {
+      const firstValidBid = startingBid + minIncrement;
+      if (maxBid < firstValidBid) {
+        error.innerText = `Your first bid must be at least $${firstValidBid}.`;
+        return;
+      }
+      // 合法首 bid
+      newEffectiveBid = firstValidBid;
     } else {
-      // 没超过当前最高 max → 只能拉到你的 maxBid 范围内
-      if (maxBid >= highestEffectiveBid + minIncrement) {
-        newEffectiveBid = highestEffectiveBid + minIncrement;
+      // ✅ 2️⃣ 正常竞价流程
+      if (maxBid <= highestEffectiveBid) {
+        error.innerText = `Your MAX bid must be greater than current bid ($${highestEffectiveBid}).`;
+        return;
+      }
+
+      if (maxBid > highestMaxBid) {
+        newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+      } else if (maxBid === highestMaxBid) {
+        newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
       } else {
-        newEffectiveBid = highestEffectiveBid; // 无法加价
+        if (maxBid >= highestEffectiveBid + minIncrement) {
+          newEffectiveBid = highestEffectiveBid + minIncrement;
+        } else {
+          newEffectiveBid = highestEffectiveBid;
+        }
       }
     }
 
