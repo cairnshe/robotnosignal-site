@@ -182,7 +182,7 @@ function renderProducts(filtered) {
 renderProducts(ongoing);
 
     products.sort((a, b) => a.ends_at?.seconds - b.ends_at?.seconds);
-    const now = Date.now();
+
     const ongoing = products.filter(p => p.ends_at?.seconds * 1000 > now);
     list.innerHTML = '';
 
