@@ -191,7 +191,8 @@ searchInput.addEventListener("input", () => {
     p.seller_email?.toLowerCase().includes(keyword)
   );
   renderProducts(filtered);
-});
+  });
+} 
 
 window.placeBid = async function(productId, currentBid) {
   const input = document.getElementById(`input-${productId}`);
