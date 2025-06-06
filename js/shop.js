@@ -125,7 +125,7 @@ async function loadProducts() {
         item.className = 'product';
 
         const bids = product.bids || [];
-        const highest = product.current_bid || product.starting_bid || 0;
+        const highest = bids.length === 0 ? 0 : (product.current_bid || product.starting_bid || 0);
 
         item.innerHTML = `
           <h2>${product.name}</h2>
@@ -224,7 +224,7 @@ window.placeBid = async function(productId, currentBid) {
     const bids = productData.bids || [];
     const startingBid = productData.starting_bid || 0;
     const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : startingBid;
-    const highestEffectiveBid = productData.current_bid || 0;
+    const highestEffectiveBid = bids.length === 0 ? 0 : (productData.current_bid || startingBid || 0);
 
     let newEffectiveBid = highestEffectiveBid;
 
