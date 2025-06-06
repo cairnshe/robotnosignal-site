@@ -180,7 +180,7 @@ function renderProducts(filtered) {
 
 // ✅ 初始渲染
 renderProducts(ongoing);
-    
+
 // ✅ 搜索监听器（实时过滤）
 searchInput.addEventListener("input", () => {
   const keyword = searchInput.value.trim().toLowerCase();
@@ -188,12 +188,11 @@ searchInput.addEventListener("input", () => {
     p.name?.toLowerCase().includes(keyword) ||
     p.description?.toLowerCase().includes(keyword) ||
     p.seller_name?.toLowerCase().includes(keyword) ||
-    p.seller_email?.toLowerCase().includes(keyword)  // 
+    p.seller_email?.toLowerCase().includes(keyword)
   );
   renderProducts(filtered);
 });
 }
-
 
 window.placeBid = async function(productId, currentBid) {
   const input = document.getElementById(`input-${productId}`);
