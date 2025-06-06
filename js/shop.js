@@ -238,8 +238,10 @@ window.placeBid = async function(productId, currentBid) {
     const startingBid = productData.starting_bid || 0;
     const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : startingBid;
     const highestEffectiveBid = bids.length === 0 ? 0 : (productData.current_bid || startingBid || 0);
+    const currentBidder = productData.current_bidder || null;
 
     let newEffectiveBid = highestEffectiveBid;
+    let newBidder = currentBidder;
 
     // ✅ 1️⃣ 特别处理首 bid：必须 ≥ starting_bid + minIncrement
     if (bids.length === 0) {
@@ -250,28 +252,51 @@ window.placeBid = async function(productId, currentBid) {
       }
       // 合法首 bid
       newEffectiveBid = firstValidBid;
+      newBidder = currentUser?.email || "anonymous";
     } else {
-      // ✅ 2️⃣ 正常竞价流程
-      if (maxBid <= highestEffectiveBid) {
-        error.innerText = `Your MAX bid must be greater than current bid ($${highestEffectiveBid}).`;
-        return;
-      }
-
-      if (maxBid > highestMaxBid) {
-        newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
-      } else if (maxBid === highestMaxBid) {
-        newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+      // ✅ 2️⃣ 判断是否自己是当前领先者
+      if (currentBidder === (currentUser?.email || "anonymous")) {
+        if (maxBid <= highestMaxBid) {
+          error.innerText = `Your new MAX bid must be higher than your current MAX bid ($${highestMaxBid}).`;
+          return;
+        }
+        // 自己领先 → 只更新 maxBid，不加 current_bid
+        newEffectiveBid = highestEffectiveBid;
+        newBidder = currentBidder;
       } else {
-        if (maxBid >= highestEffectiveBid + minIncrement) {
-          newEffectiveBid = highestEffectiveBid + minIncrement;
+        // ✅ 3️⃣ 正常竞价流程
+        if (maxBid <= highestEffectiveBid) {
+          error.innerText = `Your MAX bid must be greater than current bid ($${highestEffectiveBid}).`;
+          return;
+        }
+
+        if (maxBid > highestMaxBid) {
+          // 你超过所有人 → 出别人 maxBid + minIncrement，最多到你的 maxBid
+          newEffectiveBid = Math.min(maxBid, highestMaxBid + minIncrement);
+          newBidder = currentUser?.email || "anonymous";
+        } else if (maxBid === highestMaxBid) {
+          // 平 maxBid，触发规则 → 你后手 → 出 maxBid，当前 effectiveBid + minIncrement
+          newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+          newBidder = currentUser?.email || "anonymous";
         } else {
-          newEffectiveBid = highestEffectiveBid;
+          // 你 maxBid 不如之前最高 → 只能把 current_bid 拉高到你能出的最高
+          if (maxBid >= highestEffectiveBid + minIncrement) {
+            newEffectiveBid = highestEffectiveBid + minIncrement;
+            // current_bidder 不变
+            newBidder = (newEffectiveBid > highestEffectiveBid) ? (currentUser?.email || "anonymous") : currentBidder;
+          } else {
+            // 出价无效，不会变 current_bid
+            newEffectiveBid = highestEffectiveBid;
+            newBidder = currentBidder;
+          }
         }
       }
     }
 
+    // ✅ 更新 Firestore
     await updateDoc(productRef, {
       current_bid: newEffectiveBid,
+      current_bidder: newBidder,
       bids: arrayUnion({
         max_bid: maxBid,
         current_effective_bid: newEffectiveBid,
