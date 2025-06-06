@@ -180,79 +180,20 @@ function renderProducts(filtered) {
 
 // ✅ 初始渲染
 renderProducts(ongoing);
-
-    products.sort((a, b) => a.ends_at?.seconds - b.ends_at?.seconds);
-
-    const ongoing = products.filter(p => p.ends_at?.seconds * 1000 > now);
-    list.innerHTML = '';
-
-    ongoing.forEach((product) => {
-      const endsAt = product.ends_at.seconds * 1000;
-      const timeLeft = endsAt - now;
-      const item = document.createElement('div');
-      item.className = 'product';
-
-      const bids = product.bids || [];
-      const highest = bids.length ? bids[bids.length - 1].amount : product.starting_bid || 0;
-
-      item.innerHTML = `
-        <h2>${product.name}</h2>
-        <img src="${product.image_url}" alt="${product.name}" />
-        <p><strong>Starting Price:</strong> $${product.price}</p>
-       <p><strong>Current Bid:</strong> ${
-  bids.length > 0 ? `$${highest}` : '<em>No bids yet</em>'
-}</p>
-        <p>${product.description}</p>
-        <p><strong>Seller:</strong> ${product.seller_name}</p>
-        <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
-        <div class="bid-input">
-          <input type="number" placeholder="Your bid..." id="input-${product.id}" />
-          <button onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
-        </div>
-        <p class="error" id="error-${product.id}"></p>
-        <div class="history">
-          <a href="#" onclick="toggleHistory('${product.id}'); return false;">Show Bid History</a>
-          <ul id="history-${product.id}" style="display:none; margin-top:0.5rem;"></ul>
-        </div>
-      `;
-
-      list.appendChild(item);
-      startCountdown(`cd-${product.id}`, endsAt);
-
-      const historyEl = item.querySelector(`#history-${product.id}`);
-      if (bids.length) {
-        bids.slice().reverse().forEach(b => {
-          const li = document.createElement('li');
-          const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-          li.innerText = `${b.bidder || 'Anonymous'} bid $${b.amount} at ${date.toLocaleString()}`;
-          historyEl.appendChild(li);
-        });
-      } else {
-        const li = document.createElement('li');
-        li.innerText = "No bids yet.";
-        historyEl.appendChild(li);
-      }
-
-      const input = item.querySelector(`#input-${product.id}`);
-      const btn = item.querySelector('button');
-      const err = item.querySelector(`#error-${product.id}`);
-
-      if (!isMember) {
-        input.disabled = true;
-        btn.disabled = true;
-       err.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
-      } else {
-        input.disabled = false;
-        btn.disabled = false;
-        err.innerHTML = '';
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error loading products:', error);
-    list.innerText = 'Failed to load products.';
-  }
+    
+// ✅ 搜索监听器（实时过滤）
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const filtered = ongoing.filter(p =>
+    p.name?.toLowerCase().includes(keyword) ||
+    p.description?.toLowerCase().includes(keyword) ||
+    p.seller_name?.toLowerCase().includes(keyword) ||
+    p.seller_email?.toLowerCase().includes(keyword)  // 
+  );
+  renderProducts(filtered);
+});
 }
+
 
 window.placeBid = async function(productId, currentBid) {
   const input = document.getElementById(`input-${productId}`);
