@@ -30,17 +30,39 @@ function formatCountdown(ms) {
 
 function startCountdown(elementId, endTime) {
   const el = document.getElementById(elementId);
+
+  // 新增：获取 input 和 button 元素
+  const productId = elementId.replace('cd-', '');
+  const bidInput = document.getElementById(`input-${productId}`);
+  const bidButton = document.getElementById(`bid-btn-${productId}`);
+
   const timer = setInterval(() => {
     const now = Date.now();
     const diff = endTime - now;
+
     if (diff <= 0) {
       clearInterval(timer);
       el.innerText = 'Expired';
+
+      // 禁用输入框
+      if (bidInput) {
+        bidInput.disabled = true;
+      }
+
+      // 禁用按钮 + 改样式
+      if (bidButton) {
+        bidButton.disabled = true;
+        bidButton.textContent = 'Auction ended';
+        bidButton.style.backgroundColor = '#888'; // 灰色
+        bidButton.style.cursor = 'not-allowed';
+      }
+
     } else {
       el.innerText = formatCountdown(diff);
     }
   }, 1000);
 }
+
 
 onAuthStateChanged(auth, async (user) => {
   console.log("👀 onAuthStateChanged fired. User:", user);
@@ -150,7 +172,7 @@ async function loadProducts() {
           <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
           <div class="bid-input">
            <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
-            <button onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
+            <button id="bid-btn-${product.id}" onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
           </div>
           <p class="error" id="error-${product.id}"></p>
           <div class="history">
