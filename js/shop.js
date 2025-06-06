@@ -93,18 +93,21 @@ onAuthStateChanged(auth, async (user) => {
    } else {
     console.warn("⚠️ User not logged in.");
     const list = document.getElementById('product-list');
-  list.innerHTML = `
-  <div style="text-align: center; margin-top: 3rem;">
-    <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
-    <p style="margin-top: 1rem; font-size: 1rem;">
-      Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
-    </p>
-    <p style="font-size: 1rem;">
-      Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
-    </p>
-  </div>
-`; 
+    list.innerHTML = `
+      <div style="text-align: center; margin-top: 3rem;">
+        <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
+        <p style="margin-top: 1rem; font-size: 1rem;">
+          Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
+        </p>
+        <p style="font-size: 1rem;">
+          Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
+        </p>
+      </div>
+    `;
 } 
+
+}); 
+
 
 async function loadProducts() {
   try {
