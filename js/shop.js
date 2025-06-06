@@ -192,7 +192,6 @@ searchInput.addEventListener("input", () => {
   );
   renderProducts(filtered);
 });
-}
 
 window.placeBid = async function(productId, currentBid) {
   const input = document.getElementById(`input-${productId}`);
