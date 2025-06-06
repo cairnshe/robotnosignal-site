@@ -125,18 +125,18 @@ async function loadProducts() {
         item.className = 'product';
 
         const bids = product.bids || [];
-        const highest = bids.length ? bids[bids.length - 1].amount : product.starting_bid || 0;
+        const highest = product.current_bid || product.starting_bid || 0;
 
         item.innerHTML = `
           <h2>${product.name}</h2>
           <img src="${product.image_url}" alt="${product.name}" />
           <p><strong>Starting Price:</strong> $${product.price}</p>
-          <p><strong>Current Bid:</strong> ${bids.length ? `$${highest}` : '<em>No bids yet</em>'}</p>
+         <p><strong>Current Bid:</strong> $${highest}</p>
           <p>${product.description}</p>
           <p><strong>Seller:</strong> ${product.seller_name}</p>
           <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
           <div class="bid-input">
-            <input type="number" placeholder="Your bid..." id="input-${product.id}" />
+           <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
             <button onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
           </div>
           <p class="error" id="error-${product.id}"></p>
@@ -153,7 +153,7 @@ async function loadProducts() {
           bids.slice().reverse().forEach(b => {
             const li = document.createElement('li');
             const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-            li.innerText = `${b.bidder || 'Anonymous'} bid $${b.amount} at ${date.toLocaleString()}`;
+            li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
             historyEl.appendChild(li);
           });
         } else {
@@ -202,7 +202,7 @@ async function loadProducts() {
 window.placeBid = async function(productId, currentBid) {
   const input = document.getElementById(`input-${productId}`);
   const error = document.getElementById(`error-${productId}`);
-  const amount = parseFloat(input.value);
+  const maxBid = parseFloat(input.value);
 
   let minIncrement = 1;
   if (currentBid >= 100) {
@@ -211,23 +211,47 @@ window.placeBid = async function(productId, currentBid) {
     minIncrement = 2;
   }
 
-  const minRequired = currentBid + minIncrement;
-
-  if (isNaN(amount) || amount < minRequired) {
-    error.innerText = `Your bid must be at least $${minRequired.toFixed(2)}`;
+  if (isNaN(maxBid) || maxBid <= currentBid) {
+    error.innerText = `Your MAX bid must be greater than current bid ($${currentBid}).`;
     return;
   }
 
   try {
     const productRef = doc(db, "products", productId);
+    const productSnap = await getDoc(productRef);
+    const productData = productSnap.data();
+
+    const bids = productData.bids || [];
+    const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : productData.starting_bid || 0;
+    const highestEffectiveBid = productData.current_bid || productData.starting_bid || 0;
+
+    let newEffectiveBid = highestEffectiveBid;
+
+    if (maxBid > highestMaxBid) {
+      // 你出价最高 → 系统自动加 1 步
+      newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+    } else if (maxBid === highestMaxBid) {
+      // 平局 → 也加 1 步
+      newEffectiveBid = Math.min(maxBid, highestEffectiveBid + minIncrement);
+    } else {
+      // 没超过当前最高 max → 只能拉到你的 maxBid 范围内
+      if (maxBid >= highestEffectiveBid + minIncrement) {
+        newEffectiveBid = highestEffectiveBid + minIncrement;
+      } else {
+        newEffectiveBid = highestEffectiveBid; // 无法加价
+      }
+    }
+
     await updateDoc(productRef, {
-      current_bid: amount,
+      current_bid: newEffectiveBid,
       bids: arrayUnion({
-        amount,
+        max_bid: maxBid,
+        current_effective_bid: newEffectiveBid,
         bidder: currentUser?.email || "anonymous",
         timestamp: new Date()
       })
     });
+
     error.innerText = '';
     input.value = '';
     location.reload();
