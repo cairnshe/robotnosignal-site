@@ -186,11 +186,12 @@ async function loadProducts() {
         const historyEl = item.querySelector(`#history-${product.id}`);
         if (bids.length) {
           bids.slice().reverse().forEach(b => {
-            const li = document.createElement('li');
-            const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-            li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
-            historyEl.appendChild(li);
-          });
+   const li = document.createElement('li');
+  const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
+  li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
+  historyEl.appendChild(li);
+});
+
         } else {
           const li = document.createElement('li');
           li.innerText = "No bids yet.";
