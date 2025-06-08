@@ -328,9 +328,18 @@ window.placeBid = async function(productId, currentBid) {
       })
     });
 
-    error.innerText = '';
-    input.value = '';
-    location.reload();
+   // ✅ 出价成功 → 提示绿色文字
+error.style.color = 'green';
+error.innerText = '✅ Bid placed successfully!';
+
+// 清空输入框
+input.value = '';
+
+// ✅ 延时 1.5 秒后 reload
+setTimeout(() => {
+  location.reload();
+}, 1500);
+
   } catch (err) {
     console.error(err);
     error.innerText = "Error placing bid.";
