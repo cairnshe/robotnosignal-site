@@ -135,3 +135,4 @@ logoutLink.addEventListener("click", async (e) => {
 membershipBtn.addEventListener("click", () => {
   alert("To become a member, please contact admin or submit payment info.");
 });
+}
