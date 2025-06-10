@@ -84,16 +84,23 @@ try {
   document.getElementById("my-favorites").innerText = "Failed to load your favorites.";
 }
 
-  // 加载用户上传的商品
-  try {
-    const q = query(collection(db, "products"), where("uploader_uid", "==", user.uid));
-    const querySnap = await getDocs(q);
+ // 加载用户收藏的商品
+try {
+  const favsCol = collection(db, "users", user.uid, "favorites");
+  const favsSnap = await getDocs(favsCol);
+  const favIds = favsSnap.docs.map(docSnap => docSnap.id);
 
-    if (querySnap.empty) {
-      productsDiv.innerHTML = "<p>You haven't uploaded any products yet.</p>";
-    } else {
-      querySnap.forEach((docSnap) => {
-        const data = docSnap.data();
+  const favsDiv = document.getElementById("my-favorites");
+
+  if (favIds.length === 0) {
+    favsDiv.innerHTML = "<p>You haven't favorited any products yet.</p>";
+  } else {
+    favsDiv.innerHTML = ""; // 清空
+    for (const productId of favIds) {
+      const productRef = doc(db, "products", productId);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        const data = productSnap.data();
         const item = document.createElement("div");
         item.className = "product";
         item.innerHTML = `
@@ -103,14 +110,15 @@ try {
           <p><strong>Price:</strong> $${data.price}</p>
           <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
         `;
-        productsDiv.appendChild(item);
-      });
+        favsDiv.appendChild(item);
+      }
     }
-  } catch (err) {
-    console.error("Failed to load user products:", err);
-    productsDiv.innerText = "Failed to load your products.";
   }
-});
+} catch (err) {
+  console.error("Failed to load favorites:", err);
+  document.getElementById("my-favorites").innerText = "Failed to load your favorites.";
+}
+
 
 // 退出登录按钮
 logoutLink.addEventListener("click", async (e) => {
