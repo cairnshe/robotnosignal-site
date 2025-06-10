@@ -173,10 +173,12 @@ async function loadProducts() {
           <p>${product.description}</p>
           <p><strong>Seller:</strong> ${product.seller_name}</p>
           <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
-          <div class="bid-input">
-           <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
-            <button id="bid-btn-${product.id}" onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
+         <div class="bid-input">
+          <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
+          <button id="bid-btn-${product.id}" onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
+          <button id="fav-btn-${product.id}" class="fav-btn" data-fav="false" onclick="toggleFavorite('${product.id}')">☆</button>
           </div>
+
           <p class="error" id="error-${product.id}"></p>
           <div class="history">
             <a href="#" onclick="toggleHistory('${product.id}'); return false;">Show Bid History</a>
