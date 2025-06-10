@@ -355,3 +355,32 @@ window.toggleHistory = function(id) {
   const el = document.getElementById(`history-${id}`);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 };
+
+window.toggleFavorite = async function(productId) {
+  if (!currentUser) {
+    alert("Please log in to use Favorites.");
+    return;
+  }
+
+  const favBtn = document.getElementById(`fav-btn-${productId}`);
+  const isFav = favBtn.getAttribute("data-fav") === "true";
+  const favRef = doc(db, "users", currentUser.uid, "favorites", productId);
+
+  try {
+    if (isFav) {
+      // 取消收藏 → 删除 doc
+      await deleteDoc(favRef);
+      favBtn.setAttribute("data-fav", "false");
+      favBtn.textContent = "☆"; // 空星
+    } else {
+      // 添加收藏
+      await setDoc(favRef, {
+        added_at: new Date()
+      });
+      favBtn.setAttribute("data-fav", "true");
+      favBtn.textContent = "★"; // 实星
+    }
+  } catch (err) {
+    console.error("❌ Error toggling favorite:", err);
+  }
+};
