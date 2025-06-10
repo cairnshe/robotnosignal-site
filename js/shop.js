@@ -31,15 +31,14 @@ function formatCountdown(ms) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-function startCountdown(elementId, endTime) {
+function startCountdown(elementId, endTime, productId, highestBid, currentBidder, bids) {
   const el = document.getElementById(elementId);
 
-  // 新增：获取 input 和 button 元素
-  const productId = elementId.replace('cd-', '');
+  // 获取 input 和 button 元素
   const bidInput = document.getElementById(`input-${productId}`);
   const bidButton = document.getElementById(`bid-btn-${productId}`);
 
-  const timer = setInterval(() => {
+  const timer = setInterval(async () => {
     const now = Date.now();
     const diff = endTime - now;
 
@@ -56,8 +55,37 @@ function startCountdown(elementId, endTime) {
       if (bidButton) {
         bidButton.disabled = true;
         bidButton.textContent = 'Auction ended';
-        bidButton.style.backgroundColor = '#888'; // 灰色
+        bidButton.style.backgroundColor = '#888';
         bidButton.style.cursor = 'not-allowed';
+      }
+
+      // ✅ 自动写入 logic（管理员自动写入）
+      try {
+        if (currentUser?.uid === 'MT9pIgLkiadS3WbsLeui8zR3umd2') {
+          console.log(`📝 Auto updating product ${productId}...`);
+
+          const productRef = doc(db, "products", productId);
+          const productSnap = await getDoc(productRef);
+          const data = productSnap.data();
+
+          if (!data.order_status) {
+            const finalWinningBid = bids.length > 0 ? (data.current_bid || data.starting_bid || 0) : 0;
+            const finalWinningBidder = bids.length > 0 ? (data.current_bidder || 'anonymous') : '';
+
+            await updateDoc(productRef, {
+              winning_bidder: finalWinningBidder,
+              winning_bid_amount: finalWinningBid,
+              order_status: finalWinningBidder ? "pending_payment" : "",
+              payment_info: {}
+            });
+
+            console.log(`✅ Product ${productId} updated with order_status.`);
+          } else {
+            console.log(`ℹ️ Product ${productId} already has order_status: ${data.order_status}`);
+          }
+        }
+      } catch (err) {
+        console.error(`❌ Failed to auto update product ${productId}:`, err);
       }
 
     } else {
