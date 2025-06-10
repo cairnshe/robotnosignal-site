@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Favorites – Robot No Signal</title>
+  <link rel="icon" href="/favicon-96x96.png"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #ff6600;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .nav-left a, .nav-right a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+    main {
+      padding: 2rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 {
+      margin-bottom: 1rem;
+      color: #ff6600;
+    }
+    .product {
+      border: 1px solid #ddd;
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .product img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-left">
+      <a href="/shop.html">🛍 Shop</a>
+      <a href="/main.html">🏠 My Home</a>
+      <a href="/favorites.html">⭐ My Favorites</a>
+    </div>
+    <div class="nav-right">
+      <img id="user-avatar" class="avatar" src="https://www.gravatar.com/avatar?d=mp&s=64" alt="avatar"/>
+      <a href="#" id="logout-link">Logout</a>
+    </div>
+  </header>
+
+  <main>
+    <h2>⭐ My Favorites</h2>
+    <div id="favorites-list"></div>
+  </main>
+
+  <script type="module" src="/js/favorites.js"></script>
+</body>
+</html>
