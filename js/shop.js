@@ -186,7 +186,14 @@ async function loadProducts() {
           </div>
         `;
         list.appendChild(item);
-        startCountdown(`cd-${product.id}`, endsAt);
+        startCountdown(
+  `cd-${product.id}`,
+  endsAt,
+  product.id,
+  product.current_bid || product.starting_bid || 0,
+  product.current_bidder || '',
+  product.bids || []
+);
 
         if (currentUser) {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
