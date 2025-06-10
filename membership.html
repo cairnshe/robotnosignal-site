@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Membership Payment - Robot No Signal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+      color: #333;
+    }
+    .btn-member {
+      background: #ff6600;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: #ff6600;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background: #e65c00;
+    }
+    .success {
+      color: green;
+      margin-top: 1rem;
+    }
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Back 按钮 -->
+  <a href="/main.html" class="btn-member">⬅ Back to My Home</a>
+
+  <h2>💳 Membership Payment</h2>
+
+  <p>Please make your payment first, then fill out the form below. The admin will review and activate your membership.</p>
+
+  <!-- 假设放一个支付二维码，你可以换成你自己的图 -->
+  <img src="/images/payment-qr.png" alt="Payment QR Code" style="max-width: 300px; margin: 1rem 0;" />
+
+  <!-- 表单 -->
+  <div id="payment-form">
+    <div class="form-group">
+      <label for="payer-name">Payer Name</label>
+      <input type="text" id="payer-name" placeholder="Your name on payment" />
+    </div>
+
+    <div class="form-group">
+      <label for="payment-date">Payment Date</label>
+      <input type="date" id="payment-date" />
+    </div>
+
+    <div class="form-group">
+      <label for="remarks">Remarks (optional)</label>
+      <textarea id="remarks" rows="3" placeholder="Any additional info..."></textarea>
+    </div>
+
+    <button id="submit-payment">Submit Payment Info</button>
+
+    <p class="success" id="success-msg" style="display:none;">✅ Payment info submitted successfully! Admin will review it soon.</p>
+    <p class="error" id="error-msg" style="display:none;">❌ Failed to submit payment info.</p>
+  </div>
+
+  <!-- ✅ 加载 membership.js -->
+  <script type="module" src="/js/membership.js"></script>
+
+</body>
+</html>
