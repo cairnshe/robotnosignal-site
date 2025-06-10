@@ -188,6 +188,22 @@ async function loadProducts() {
         list.appendChild(item);
         startCountdown(`cd-${product.id}`, endsAt);
 
+        if (currentUser) {
+  const favBtn = document.getElementById(`fav-btn-${product.id}`);
+  const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
+  getDoc(favRef).then((favSnap) => {
+    if (favSnap.exists()) {
+      favBtn.setAttribute("data-fav", "true");
+      favBtn.textContent = "★"; // 实星
+    } else {
+      favBtn.setAttribute("data-fav", "false");
+      favBtn.textContent = "☆"; // 空星
+    }
+  }).catch((err) => {
+    console.error("❌ Error loading favorite status:", err);
+  });
+}
+        
         const historyEl = item.querySelector(`#history-${product.id}`);
         if (bids.length) {
           bids.slice().reverse().forEach(b => {
