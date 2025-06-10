@@ -29,43 +29,36 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // 加载用户是否为会员
- // 加载用户是否为会员
-try {
-  const memberRef = doc(db, "memberships", user.uid);
-  const memberSnap = await getDoc(memberRef);
-  if (memberSnap.exists()) {
-    const paidUntil = memberSnap.data().paid_until?.seconds * 1000;
-    if (paidUntil > Date.now()) {
-      membershipBtn.innerText = "✅ Already a Member";
-      membershipBtn.disabled = true;
-    } else {
-      const cta = document.createElement("a");
-      cta.href = "/membership.html";
-      cta.innerText = "🔑 Become a Member to Upload and Bid";
-      cta.className = "inline-block mt-4 bg-yellow-400 text-black px-4 py-2 rounded font-bold hover:bg-yellow-500 transition";
-      document.querySelector("main").appendChild(cta);
-    }
-  }
-} catch (e) {
-  console.error("Failed to load membership:", e);
-}
-
   try {
-  const favsCol = collection(db, "users", user.uid, "favorites");
-  const favsSnap = await getDocs(favsCol);
-  const favIds = favsSnap.docs.map(docSnap => docSnap.id);
+    const memberRef = doc(db, "memberships", user.uid);
+    const memberSnap = await getDoc(memberRef);
+    if (memberSnap.exists()) {
+      const paidUntil = memberSnap.data().paid_until?.seconds * 1000;
+      if (paidUntil > Date.now()) {
+        membershipBtn.innerText = "✅ Already a Member";
+        membershipBtn.disabled = true;
+      } else {
+        const cta = document.createElement("a");
+        cta.href = "/membership.html";
+        cta.innerText = "🔑 Become a Member to Upload and Bid";
+        cta.className = "inline-block mt-4 bg-yellow-400 text-black px-4 py-2 rounded font-bold hover:bg-yellow-500 transition";
+        document.querySelector("main").appendChild(cta);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load membership:", e);
+  }
 
-  const favsDiv = document.getElementById("my-favorites");
+  // 加载用户上传的商品
+  try {
+    const q = query(collection(db, "products"), where("uploader_uid", "==", user.uid));
+    const querySnap = await getDocs(q);
 
-  if (favIds.length === 0) {
-    favsDiv.innerHTML = "<p>You haven't favorited any products yet.</p>";
-  } else {
-    favsDiv.innerHTML = ""; // 清空
-    for (const productId of favIds) {
-      const productRef = doc(db, "products", productId);
-      const productSnap = await getDoc(productRef);
-      if (productSnap.exists()) {
-        const data = productSnap.data();
+    if (querySnap.empty) {
+      productsDiv.innerHTML = "<p>You haven't uploaded any products yet.</p>";
+    } else {
+      querySnap.forEach((docSnap) => {
+        const data = docSnap.data();
         const item = document.createElement("div");
         item.className = "product";
         item.innerHTML = `
@@ -75,50 +68,20 @@ try {
           <p><strong>Price:</strong> $${data.price}</p>
           <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
         `;
-        favsDiv.appendChild(item);
-      }
+        productsDiv.appendChild(item);
+      });
     }
+  } catch (err) {
+    console.error("Failed to load user products:", err);
+    productsDiv.innerText = "Failed to load your products.";
   }
-} catch (err) {
-  console.error("Failed to load favorites:", err);
-  document.getElementById("my-favorites").innerText = "Failed to load your favorites.";
-}
 
- // 加载用户收藏的商品
-try {
-  const favsCol = collection(db, "users", user.uid, "favorites");
-  const favsSnap = await getDocs(favsCol);
-  const favIds = favsSnap.docs.map(docSnap => docSnap.id);
+  // 成为会员按钮逻辑
+  membershipBtn.addEventListener("click", () => {
+    alert("To become a member, please contact admin or submit payment info.");
+  });
 
-  const favsDiv = document.getElementById("my-favorites");
-
-  if (favIds.length === 0) {
-    favsDiv.innerHTML = "<p>You haven't favorited any products yet.</p>";
-  } else {
-    favsDiv.innerHTML = ""; // 清空
-    for (const productId of favIds) {
-      const productRef = doc(db, "products", productId);
-      const productSnap = await getDoc(productRef);
-      if (productSnap.exists()) {
-        const data = productSnap.data();
-        const item = document.createElement("div");
-        item.className = "product";
-        item.innerHTML = `
-          <h3>${data.name}</h3>
-          <img src="${data.image_url}" alt="${data.name}" />
-          <p><strong>Description:</strong> ${data.description}</p>
-          <p><strong>Price:</strong> $${data.price}</p>
-          <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
-        `;
-        favsDiv.appendChild(item);
-      }
-    }
-  }
-} catch (err) {
-  console.error("Failed to load favorites:", err);
-  document.getElementById("my-favorites").innerText = "Failed to load your favorites.";
-}
-
+});  // ✅ onAuthStateChanged 正确结束！！！
 
 // 退出登录按钮
 logoutLink.addEventListener("click", async (e) => {
@@ -130,9 +93,3 @@ logoutLink.addEventListener("click", async (e) => {
     console.error("Logout failed:", err);
   }
 });
-
-// 成为会员按钮逻辑（跳转/引导）
-membershipBtn.addEventListener("click", () => {
-  alert("To become a member, please contact admin or submit payment info.");
-});
-}
