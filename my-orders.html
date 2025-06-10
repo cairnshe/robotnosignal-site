@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders - Robot No Signal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }
+    .order-section { margin-bottom: 2rem; }
+    .order-section h2 { color: #ff6600; }
+    .order-card {
+      border: 1px solid #ccc;
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .order-card img {
+      max-width: 150px;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .pay-btn {
+      background: #28a745;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    .pay-btn:disabled {
+      background: gray;
+      cursor: default;
+    }
+    .nav-back {
+      display: inline-block;
+      margin-bottom: 1rem;
+      background: #ff6600;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<a href="/main.html" class="nav-back">⬅ Back to My Home</a>
+
+<h1>🛒 My Orders</h1>
+
+<div id="orders-to-pay" class="order-section">
+  <h2>💰 To Be Paid</h2>
+  <div id="orders-to-pay-list"></div>
+</div>
+
+<div id="orders-paid" class="order-section">
+  <h2>✅ Paid</h2>
+  <div id="orders-paid-list"></div>
+</div>
+
+<div id="orders-shipped" class="order-section">
+  <h2>🚚 Shipped</h2>
+  <div id="orders-shipped-list"></div>
+</div>
+
+<div id="orders-completed" class="order-section">
+  <h2>🎉 Completed</h2>
+  <div id="orders-completed-list"></div>
+</div>
+
+<script type="module" src="/js/my-orders.js"></script>
+
+</body>
+</html>
