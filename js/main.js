@@ -50,6 +50,39 @@ try {
   console.error("Failed to load membership:", e);
 }
 
+  try {
+  const favsCol = collection(db, "users", user.uid, "favorites");
+  const favsSnap = await getDocs(favsCol);
+  const favIds = favsSnap.docs.map(docSnap => docSnap.id);
+
+  const favsDiv = document.getElementById("my-favorites");
+
+  if (favIds.length === 0) {
+    favsDiv.innerHTML = "<p>You haven't favorited any products yet.</p>";
+  } else {
+    favsDiv.innerHTML = ""; // 清空
+    for (const productId of favIds) {
+      const productRef = doc(db, "products", productId);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        const data = productSnap.data();
+        const item = document.createElement("div");
+        item.className = "product";
+        item.innerHTML = `
+          <h3>${data.name}</h3>
+          <img src="${data.image_url}" alt="${data.name}" />
+          <p><strong>Description:</strong> ${data.description}</p>
+          <p><strong>Price:</strong> $${data.price}</p>
+          <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
+        `;
+        favsDiv.appendChild(item);
+      }
+    }
+  }
+} catch (err) {
+  console.error("Failed to load favorites:", err);
+  document.getElementById("my-favorites").innerText = "Failed to load your favorites.";
+}
 
   // 加载用户上传的商品
   try {
