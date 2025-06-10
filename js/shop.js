@@ -9,8 +9,11 @@ import {
   doc,
   updateDoc,
   arrayUnion,
-  getDoc
+  getDoc,
+  setDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
