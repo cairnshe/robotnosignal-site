@@ -192,13 +192,17 @@ async function loadProducts() {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
   const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
   getDoc(favRef).then((favSnap) => {
+    
     if (favSnap.exists()) {
-      favBtn.setAttribute("data-fav", "true");
-      favBtn.textContent = "★"; // 实星
-    } else {
-      favBtn.setAttribute("data-fav", "false");
-      favBtn.textContent = "☆"; // 空星
-    }
+  favBtn.setAttribute("data-fav", "true");
+  favBtn.textContent = "★"; // 实星
+  favBtn.style.color = "gold"; // 变黄色
+} else {
+  favBtn.setAttribute("data-fav", "false");
+  favBtn.textContent = "☆"; // 空星
+  favBtn.style.color = "black"; // 黑色
+}
+    
   }).catch((err) => {
     console.error("❌ Error loading favorite status:", err);
   });
@@ -383,19 +387,23 @@ window.toggleFavorite = async function(productId) {
   const favRef = doc(db, "users", currentUser.uid, "favorites", productId);
 
   try {
+    
     if (isFav) {
-      // 取消收藏 → 删除 doc
-      await deleteDoc(favRef);
-      favBtn.setAttribute("data-fav", "false");
-      favBtn.textContent = "☆"; // 空星
-    } else {
-      // 添加收藏
-      await setDoc(favRef, {
-        added_at: new Date()
-      });
-      favBtn.setAttribute("data-fav", "true");
-      favBtn.textContent = "★"; // 实星
-    }
+  // 取消收藏 → 删除 doc
+  await deleteDoc(favRef);
+  favBtn.setAttribute("data-fav", "false");
+  favBtn.textContent = "☆"; // 空星
+  favBtn.style.color = "black"; // 恢复黑色
+} else {
+  // 添加收藏
+  await setDoc(favRef, {
+    added_at: new Date()
+  });
+  favBtn.setAttribute("data-fav", "true");
+  favBtn.textContent = "★"; // 实星
+  favBtn.style.color = "gold"; // 变黄色
+}
+    
   } catch (err) {
     console.error("❌ Error toggling favorite:", err);
   }
