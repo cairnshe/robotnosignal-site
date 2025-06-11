@@ -6,6 +6,14 @@ import {
   doc, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+// 初始化 Storage
+const storage = getStorage();
+
+
 // 获取 URL 参数
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('product_id');
