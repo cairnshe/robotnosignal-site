@@ -60,30 +60,29 @@ onAuthStateChanged(auth, async (user) => {
   <p><strong>Order Status:</strong> ${product.order_status}</p>
   <p><strong>Total To Pay:</strong> $${totalAmount.toFixed(2)}</p>
 
-  <p><strong>Upload Payment Receipt:</strong></p>
-  <input type="file" id="receipt-file" accept="image/*" />
+ <p><strong>Upload Payment Receipt (Optional, Not Enabled Yet):</strong></p>
+<input type="file" id="receipt-file" accept="image/*" disabled style="opacity: 0.5;" />
+<p style="font-size: 0.9em; color: gray;">(Image upload not enabled yet. Please fill in your payment note below.)</p>
 
-  <br /><br />
-  <button id="pay-now-btn" class="pay-btn">Confirm Payment</button>
+<p><strong>Payment Note:</strong> (e.g., "Paid via WeChat on 6/11, last 4 digits of sender phone 1234")</p>
+<textarea id="payment-note" rows="3" style="width:100%;" placeholder="Enter your payment note here..."></textarea>
+
+<br /><br />
+<button id="pay-now-btn" class="pay-btn">Confirm Payment</button>
 `;
 
 
     // 点击 Confirm Payment 按钮
-   document.getElementById("pay-now-btn").addEventListener("click", async () => {
-  const fileInput = document.getElementById("receipt-file");
-  const file = fileInput.files[0];
+ document.getElementById("pay-now-btn").addEventListener("click", async () => {
+  const noteInput = document.getElementById("payment-note");
+  const buyerNote = noteInput.value.trim();
 
-  if (!file) {
-    alert("❗ Please upload your payment receipt first.");
+  if (!buyerNote) {
+    alert("❗ Please enter your payment note.");
     return;
   }
 
   try {
-    // 上传图片到 Storage
-    const receiptRef = ref(storage, `payment_receipts/${productId}_${Date.now()}.jpg`);
-    await uploadBytes(receiptRef, file);
-    const receiptURL = await getDownloadURL(receiptRef);
-
     // 更新 Firestore
     await updateDoc(productRef, {
       order_status: "paid",
@@ -91,7 +90,8 @@ onAuthStateChanged(auth, async (user) => {
         paid_at: new Date(),
         paid_amount: totalAmount,
         method: "manual_test",
-        receipt_url: receiptURL // ⭐️ 这里存 Storage URL
+        receipt_url: "", // 未来有 Storage 再用
+        buyer_note: buyerNote // ⭐️ 存买家备注
       }
     });
 
