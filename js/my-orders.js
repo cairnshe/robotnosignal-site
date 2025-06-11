@@ -60,10 +60,10 @@ function renderOrders(orders, status, containerId) {
       const payBtn = document.createElement("button");
       payBtn.className = "pay-btn";
       payBtn.innerText = "Pay Now";
-      payBtn.addEventListener("click", () => {
-        alert("❗ You clicked Pay Now. Implement payment flow here.");
-        // 这里后面可以加跳转 /my-order-payment.html?orderId=xxx
-      });
+     payBtn.addEventListener("click", () => {
+  window.location.href = `/payment.html?product_id=${order.id}`;
+});
+
       card.appendChild(payBtn);
     }
 
