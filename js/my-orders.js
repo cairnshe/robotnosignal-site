@@ -55,37 +55,42 @@ function renderOrders(orders, status, containerId) {
       <p><strong>Order Status:</strong> ${order.order_status}</p>
     `;
 
-    // 若待付款，显示 Pay Now 按钮（这里只是示例按钮）
-   if (order.order_status === "pending_payment") {
-  const payBtn = document.createElement("button");
-  payBtn.className = "pay-btn";
-  payBtn.innerText = "Pay Now";
-
-  payBtn.addEventListener("click", () => {
-    // 计算手续费
-    const baseAmount = order.winning_bid_amount || 0;
-    let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
-    if (fee < 1) fee = 1;
-
-    const totalToPay = Math.round((baseAmount + fee) * 100) / 100;
-
-    // 弹窗确认
-    const confirmPay = confirm(
-      `Winning Bid: $${baseAmount}\n` +
-      `Platform Fee: $${fee.toFixed(2)}\n` +
-      `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
-      `Do you want to proceed to pay?`
-    );
-
-    if (confirmPay) {
-      // 跳转到 payment.html 并带参数
-      window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}`;
+    // ⭐️ 新增 → 如果是 paid/shipped/completed → 显示 buyer_note（如果有）
+    if (["paid", "shipped", "completed"].includes(order.order_status)) {
+      const buyerNote = order.payment_info?.buyer_note || "";
+      if (buyerNote) {
+        const noteP = document.createElement("p");
+        noteP.innerHTML = `<strong>Buyer Note:</strong> ${buyerNote}`;
+        card.appendChild(noteP);
+      }
     }
-  });
 
-  card.appendChild(payBtn);
-}
+    // 若待付款，显示 Pay Now 按钮
+    if (order.order_status === "pending_payment") {
+      const payBtn = document.createElement("button");
+      payBtn.className = "pay-btn";
+      payBtn.innerText = "Pay Now";
+      payBtn.addEventListener("click", () => {
+        const baseAmount = order.winning_bid_amount || 0;
+        let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
+        if (fee < 1) fee = 1;
 
-    container.appendChild(card);
+        const totalToPay = Math.round((baseAmount + fee) * 100) / 100;
+
+        const confirmPay = confirm(
+          `Winning Bid: $${baseAmount}\n` +
+          `Platform Fee: $${fee.toFixed(2)}\n` +
+          `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
+          `Do you want to proceed to pay?`
+        );
+
+        if (confirmPay) {
+          window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}`;
+        }
+      });
+      card.appendChild(payBtn); // ✅ 这里放 if 里面最后一行
+    }
+
+    container.appendChild(card); // ✅ 每张 card 最后 append 到 container
   });
 }
