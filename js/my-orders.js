@@ -52,7 +52,7 @@ function renderOrders(orders, status, containerId) {
       <h3>${order.name}</h3>
       <img src="${order.image_url}" alt="${order.name}" />
       <p><strong>Winning Bid:</strong> $${order.winning_bid_amount}</p>
-      <p><strong>Order Status:</strong> ${order.order_status}</p>
+     <p><strong>Order Status:</strong> ${getOrderStatusLabel(order.order_status)}</p>
     `;
 
     // ⭐️ 新增 → 如果是 paid/shipped/completed → 显示 buyer_note（如果有）
