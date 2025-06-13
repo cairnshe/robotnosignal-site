@@ -94,3 +94,18 @@ function renderOrders(orders, status, containerId) {
     container.appendChild(card); // ✅ 每张 card 最后 append 到 container
   });
 }
+
+function getOrderStatusLabel(status) {
+  switch (status) {
+    case "pending_payment":
+      return "Pending Payment - Please proceed to payment.";
+    case "paid":
+      return "Paid - Waiting for seller to ship.";
+    case "shipped":
+      return "Shipped - Waiting for your confirmation.";
+    case "completed":
+      return "Completed - Thank you for your support!";
+    default:
+      return status; // fallback
+  }
+}
