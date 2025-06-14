@@ -1,12 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Admin Ship Orders</title>
-    <script type="module" src="js/admin-ship.js"></script>
+  <meta charset="UTF-8" />
+  <title>Admin Ship Orders</title>
+  <script type="module" src="./admin-ship.js"></script>
+
+  <!-- ✅ 加入 EmailJS 脚本 -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("ibgUPxywW3fHZGgSq");  // ⚠️ 替换为你的 PUBLIC KEY
+    })();
+  </script>
 </head>
 <body>
-    <h1>📦 Admin: Ship Orders</h1>
-    <div id="orders-list">Loading orders...</div>
+  <h1>📦 Admin: Ship Orders</h1>
+  <div id="orders-list">Loading orders...</div>
 </body>
 </html>
