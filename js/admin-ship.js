@@ -111,4 +111,4 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
     console.error('Failed to send email:', error);
     alert("Order marked as shipped, but failed to send email.");
   }
-};   // <== 最外层的 window.markAsShipped 函数的 } 要有
+};  // 这里要加一个 } + 分号，闭合 window.markAsShipped 函数
