@@ -11,8 +11,6 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// ✅ 加上这句以启用 EmailJS
-import emailjs from "https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js";
 
 // EmailJS config
 const EMAILJS_SERVICE_ID = 'service_45v1ooq';
