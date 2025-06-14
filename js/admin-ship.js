@@ -94,6 +94,8 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
       to_email: buyerEmail
     };
 
+    console.log("🚀 Sending Email via EmailJS with params:", params);
+
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
       EMAILJS_TEMPLATE_ID,
@@ -101,14 +103,18 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
       EMAILJS_PUBLIC_KEY
     );
 
-    console.log("Email sent:", response);
+    console.log("✅ Email sent successfully:", response);
     alert("Order marked as shipped and email sent!");
 
     // Refresh page
     location.reload();
 
   } catch (error) {
-    console.error('Failed to send email:', error);
-    alert("Order marked as shipped, but failed to send email.");
+    console.error('❌ Failed to send email:', error);
+    alert(
+      "Order marked as shipped, but failed to send email.\n\nError details:\n" + 
+      JSON.stringify(error)
+    );
   }
-};  // 这里要加一个 } + 分号，闭合 window.markAsShipped 函数
+};
+
