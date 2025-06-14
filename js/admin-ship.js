@@ -107,8 +107,7 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
     // Refresh page
     location.reload();
 
-.catch((error) => {
-    console.error('Failed to send email:', error);
-    alert("Order marked as shipped, but failed to send email.");
-});
-
+} catch (error) {
+  console.error('Failed to send email:', error);
+  alert("Order marked as shipped, but failed to send email.");
+}
