@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Ship Orders</title>
-  <script type="module" src="./js/admin-ship.js"></script>
 
-  <!-- ✅ 加入 EmailJS 脚本 -->
+  <!-- ✅ 加载 EmailJS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script>
-    (function() {
-      emailjs.init("ibgUPxywW3fHZGgSq");  // ⚠️ 替换为你的 PUBLIC KEY
-    })();
+    emailjs.init("ibgUPxywW3fHZGgSq");  // ⚠️ 你的 PUBLIC KEY
   </script>
+
+  <!-- ✅ 加载你自己的 JS 文件 -->
+  <script type="module" src="./admin-ship.js"></script>
 </head>
 <body>
   <h1>📦 Admin: Ship Orders</h1>
