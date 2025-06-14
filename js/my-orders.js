@@ -55,6 +55,24 @@ function renderOrders(orders, status, containerId) {
      <p><strong>Order Status:</strong> ${getOrderStatusLabel(order.order_status)}</p>
     `;
 
+    // ✅ 如果是已发货，显示物流单号与发货时间
+if (order.order_status === "shipped") {
+  const trackingNumber = order.payment_info?.tracking_number || "(not available)";
+  const shippedAtRaw = order.shipped_at;
+  const shippedAtFormatted = shippedAtRaw
+    ? new Date(shippedAtRaw).toLocaleString()
+    : "(unknown time)";
+
+  const trackingP = document.createElement("p");
+  trackingP.innerHTML = `<strong>Tracking Number:</strong> ${trackingNumber}`;
+  card.appendChild(trackingP);
+
+  const timeP = document.createElement("p");
+  timeP.innerHTML = `<strong>Shipped At:</strong> ${shippedAtFormatted}`;
+  card.appendChild(timeP);
+}
+
+
     // ⭐️ 新增 → 如果是 paid/shipped/completed → 显示 buyer_note（如果有）
     if (["paid", "shipped", "completed"].includes(order.order_status)) {
       const buyerNote = order.payment_info?.buyer_note || "";
