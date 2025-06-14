@@ -7,14 +7,39 @@
   <!-- ✅ 加载 EmailJS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script>
-    emailjs.init("ibgUPxywW3fHZGgSq");  // ⚠️ 你的 PUBLIC KEY
+    emailjs.init("ibgUPxywW3fHZGgSq");  // ⚠️ 使用你的 PUBLIC KEY 初始化
   </script>
 
-  <!-- ✅ 加载你自己的 JS 文件 -->
+  <!-- ✅ 引入样式（可选） -->
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .product-card {
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .product-card button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .product-card button[disabled] {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+
+  <!-- ✅ 加载后台逻辑脚本 -->
   <script type="module" src="./js/admin-ship.js"></script>
 </head>
 <body>
-  <h1>📦 Admin: Ship Orders</h1>
-  <div id="orders-list">Loading orders...</div>
+  <h1>📦 发货管理后台</h1>
+  <p>以下是所有已中标但尚未发货的商品：</p>
+  <div id="product-list">加载中...</div>
 </body>
 </html>
