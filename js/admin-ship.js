@@ -14,7 +14,7 @@ import {
 // EmailJS config
 const EMAILJS_SERVICE_ID = 'service_45v1ooq';
 const EMAILJS_TEMPLATE_ID = 'template_qm0xhch';
-const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY_HERE'; // ⚠️ 填你自己的 public key
+const EMAILJS_PUBLIC_KEY = 'ibgUPxywW3fHZGgSq'; // ⚠️ 填你自己的 public key
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
