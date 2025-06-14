@@ -82,10 +82,12 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
 
   // Update Firestore
   const productRef = doc(db, "products", productId);
-  await updateDoc(productRef, {
-    order_status: "shipped",
-    "payment_info.tracking_number": trackingNumber
-  });
+ await updateDoc(productRef, {
+  order_status: "shipped",
+  "payment_info.tracking_number": trackingNumber,
+  shipped_at: new Date().toISOString()  // ⏱ 加入发货时间
+});
+
 
   // Send Email via EmailJS
   try {
