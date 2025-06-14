@@ -64,14 +64,14 @@ function renderPaidOrders(orders) {
       <p><strong>Buyer:</strong> ${order.winning_bidder}</p>
       <label>Tracking Number:</label>
       <input type="text" id="tracking-${order.id}" placeholder="Enter tracking number" />
-      <button class="ship-btn" onclick="markAsShipped('${order.id}', '${order.name}', '${order.winning_bidder}')">Mark as Shipped & Send Email</button>
+      <button class="ship-btn" onclick="markAsShipped('${order.id}', '${order.name}', '${order.winning_bidder}', '${order.image_url}')">Mark as Shipped & Send Email</button>
     `;
 
     container.appendChild(card);
   });
 }
 
-window.markAsShipped = async function (productId, productName, buyerEmail) {
+window.markAsShipped = async function (productId, productName, buyerEmail, imageUrl) {
   const trackingInput = document.getElementById(`tracking-${productId}`);
   const trackingNumber = trackingInput.value.trim();
 
@@ -91,11 +91,13 @@ window.markAsShipped = async function (productId, productName, buyerEmail) {
 
   // Send Email via EmailJS
   try {
-    const params = {
-      product_name: productName,
-      tracking_number: trackingNumber,
-      to_email: buyerEmail
-    };
+const params = {
+  product_name: productName,
+  tracking_number: trackingNumber,
+  to_email: buyerEmail,
+  image_url: imageUrl
+};
+
 
     console.log("🚀 Sending Email via EmailJS with params:", params);
 
