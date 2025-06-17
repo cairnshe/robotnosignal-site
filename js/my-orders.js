@@ -7,6 +7,17 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+// 加拿大各省税率映射表（仅支持主要省份）
+const PROVINCE_TAX_RATES = {
+  ON: 0.13, BC: 0.12, QC: 0.14975, AB: 0.05,
+  MB: 0.12, SK: 0.11, NS: 0.15, NB: 0.15,
+  PE: 0.15, NL: 0.15
+};
+
+// 默认税率（如果用户没有填写省份，就用安大略省）
+let taxRate = 0.13;
+
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "/login.html";
