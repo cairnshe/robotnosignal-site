@@ -1,4 +1,15 @@
 // js/ended-auctions.js
+
+function maskEmail(email) {
+  if (typeof email !== 'string' || !email.includes('@')) return email;
+  const [name, domain] = email.split('@');
+  if (!name || !domain) return email;
+  const maskedName = name.length <= 2
+    ? name[0] + '*'
+    : name.slice(0, 2) + '*'.repeat(name.length - 2);
+  return maskedName + '@' + domain;
+}
+
 import { db } from './firebase-config.js';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
