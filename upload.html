@@ -29,20 +29,29 @@
      <label for="ends_at" class="block text-sm font-medium text-gray-700">⏰ Auction Ends At</label>
 <input type="datetime-local" id="ends_at" required class="w-full border p-2 rounded" />
 
-<label for="delivery_method" class="block text-sm font-medium text-gray-700 mt-4">📦 Delivery Method</label>
-<select id="delivery_method" required class="w-full border p-2 rounded">
-  <option value="shipping">Shipping</option>
-  <option value="pickup">Pickup (Requires admin approval)</option>
-</select>
+<div class="mt-4">
+  <label class="block text-sm font-medium text-gray-700 mb-1">📦 Delivery Options</label>
+  <div class="flex flex-col gap-2">
+    <label class="inline-flex items-center">
+      <input type="checkbox" id="shipping_enabled" class="mr-2" />
+      Enable Shipping (Buyer pays shipping fee)
+    </label>
+    <div id="shipping-fee-group" class="ml-6 hidden">
+      <label for="shipping_fee" class="block text-sm font-medium text-gray-700">🚚 Shipping Fee (CAD)</label>
+      <input type="number" id="shipping_fee" placeholder="e.g. 5.00" class="w-full border p-2 rounded" />
+    </div>
 
-<div id="shipping-fee-group" class="mt-2">
-  <label for="shipping_fee" class="block text-sm font-medium text-gray-700">🚚 Shipping Fee (CAD)</label>
-  <input type="number" id="shipping_fee" placeholder="e.g. 5.00" class="w-full border p-2 rounded" />
+    <label class="inline-flex items-center">
+      <input type="checkbox" id="pickup_enabled" class="mr-2" />
+      Enable Pickup (Must be admin-approved)
+    </label>
+    <div id="pickup-address-group" class="ml-6 hidden">
+      <label for="pickup_address" class="block text-sm font-medium text-gray-700">📍 Pickup Location</label>
+      <input type="text" id="pickup_address" placeholder="City, Province, Country" class="w-full border p-2 rounded" />
+      <p class="text-yellow-600 text-sm mt-1">⚠️ Pickup requests require admin approval.</p>
+    </div>
+  </div>
 </div>
-
-<p id="pickup-note" class="mt-2 text-sm text-yellow-600 hidden">
-  ⚠️ Pickup requests require admin approval. Please contact support.
-</p>
 
      <button type="submit" style="background-color: orange; color: white; padding: 10px; border: none; width: 100%; font-weight: bold; border-radius: 4px;">
   ✅ Upload Product
@@ -94,22 +103,28 @@
         return;
       }
 
-      const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
+    const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
+const deliveryMethod = document.getElementById("delivery_method").value;
+const shippingFeeRaw = document.getElementById("shipping_fee").value;
+const shippingFee = deliveryMethod === "shipping" ? parseFloat(shippingFeeRaw) || 0 : 0;
 
-      try {
-        await addDoc(collection(db, "products"), {
-          name,
-          description,
-          price,
-          starting_bid: price,
-          current_bid: 0,
-          image_url: imageUrl,
-          ends_at: endsAt,
-          uploader_uid: currentUser.uid,
-          seller_name: currentUser.email || "anonymous",
-          created_at: serverTimestamp(),
-          bids: []
-        });
+try {
+  await addDoc(collection(db, "products"), {
+    name,
+    description,
+    price,
+    starting_bid: price,
+    current_bid: 0,
+    image_url: imageUrl,
+    ends_at: endsAt,
+    uploader_uid: currentUser.uid,
+    seller_name: currentUser.email || "anonymous",
+    delivery_method: deliveryMethod,
+    shipping_fee: shippingFee,
+    created_at: serverTimestamp(),
+    bids: []
+  });
+
 message.style.color = "green";
 message.innerText = "✅ Product uploaded successfully! Redirecting...";
 setTimeout(() => {
@@ -123,6 +138,20 @@ setTimeout(() => {
       }
     });
 
+const deliverySelect = document.getElementById("delivery_method");
+const shippingFeeGroup = document.getElementById("shipping-fee-group");
+const pickupNote = document.getElementById("pickup-note");
+
+deliverySelect.addEventListener("change", () => {
+  if (deliverySelect.value === "pickup") {
+    shippingFeeGroup.classList.add("hidden");
+    pickupNote.classList.remove("hidden");
+  } else {
+    shippingFeeGroup.classList.remove("hidden");
+    pickupNote.classList.add("hidden");
+  }
+});
+    
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
       window.location.href = "/login.html";
