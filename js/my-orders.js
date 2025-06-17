@@ -107,27 +107,36 @@ if (order.order_status === "shipped") {
 
     // 若待付款，显示 Pay Now 按钮
     if (order.order_status === "pending_payment") {
-      const payBtn = document.createElement("button");
-      payBtn.className = "pay-btn";
-      payBtn.innerText = "Pay Now";
-      payBtn.addEventListener("click", () => {
-        const baseAmount = order.winning_bid_amount || 0;
-        let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
-        if (fee < 1) fee = 1;
+     const payBtn = document.createElement("button");
+payBtn.className = "pay-btn";
+payBtn.innerText = "Pay Now";
+payBtn.addEventListener("click", () => {
+  const baseAmount = order.winning_bid_amount || 0;
 
-        const totalToPay = Math.round((baseAmount + fee) * 100) / 100;
+  // 计算平台手续费
+  let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
+  if (fee < 1) fee = 1;
 
-        const confirmPay = confirm(
-          `Winning Bid: $${baseAmount}\n` +
-          `Platform Fee: $${fee.toFixed(2)}\n` +
-          `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
-          `Do you want to proceed to pay?`
-        );
+  // 计算税（仅对 baseAmount + fee 计算）
+  const subtotal = baseAmount + fee;
+  const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
 
-        if (confirmPay) {
-          window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}`;
-        }
-      });
+  // 总金额
+  const totalToPay = Math.round((subtotal + taxAmount) * 100) / 100;
+
+  const confirmPay = confirm(
+    `Winning Bid: $${baseAmount.toFixed(2)}\n` +
+    `Platform Fee: $${fee.toFixed(2)}\n` +
+    `Tax (${(taxRate * 100).toFixed(2)}%): $${taxAmount.toFixed(2)}\n` +
+    `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
+    `Do you want to proceed to pay?`
+  );
+
+  if (confirmPay) {
+    window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}`;
+  }
+});
+
       card.appendChild(payBtn); // ✅ 这里放 if 里面最后一行
     }
 
