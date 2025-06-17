@@ -101,6 +101,46 @@
       Timestamp
     } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+    // 🗺️ Canada 省份-城市映射
+const provinceCityMap = {
+  "Ontario": ["Toronto", "Ottawa", "Mississauga"],
+  "British Columbia": ["Vancouver", "Victoria", "Richmond"],
+  "Alberta": ["Calgary", "Edmonton", "Red Deer"],
+  "Quebec": ["Montreal", "Quebec City", "Laval"],
+  "Manitoba": ["Winnipeg", "Brandon"],
+  "Saskatchewan": ["Saskatoon", "Regina"],
+  "Nova Scotia": ["Halifax"],
+  "New Brunswick": ["Moncton", "Fredericton"],
+  "Newfoundland and Labrador": ["St. John's"],
+  "Prince Edward Island": ["Charlottetown"],
+  "Northwest Territories": ["Yellowknife"],
+  "Yukon": ["Whitehorse"],
+  "Nunavut": ["Iqaluit"]
+};
+
+const provinceSelect = document.getElementById("province");
+const citySelect = document.getElementById("city");
+
+// 加载所有省份
+for (const province in provinceCityMap) {
+  const option = document.createElement("option");
+  option.value = province;
+  option.textContent = province;
+  provinceSelect.appendChild(option);
+}
+
+// 当选择省份后更新城市
+provinceSelect.addEventListener("change", () => {
+  const cities = provinceCityMap[provinceSelect.value] || [];
+  citySelect.innerHTML = '<option value="">Select City</option>';
+  cities.forEach(city => {
+    const option = document.createElement("option");
+    option.value = city;
+    option.textContent = city;
+    citySelect.appendChild(option);
+  });
+});
+
     const form = document.getElementById("upload-form");
     const message = document.getElementById("message");
     const logoutBtn = document.getElementById("logout-btn");
