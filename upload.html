@@ -26,8 +26,23 @@
       <input type="url" id="image_url" placeholder="Image URL (GitHub/raw link temporarily)" required class="w-full border p-2 rounded" />
       <img id="preview" class="w-full rounded mb-4 hidden" />
 
-      <label for="ends_at" class="block text-sm font-medium text-gray-700">⏰ Auction Ends At</label>
-      <input type="datetime-local" id="ends_at" required class="w-full border p-2 rounded" />
+     <label for="ends_at" class="block text-sm font-medium text-gray-700">⏰ Auction Ends At</label>
+<input type="datetime-local" id="ends_at" required class="w-full border p-2 rounded" />
+
+<label for="delivery_method" class="block text-sm font-medium text-gray-700 mt-4">📦 Delivery Method</label>
+<select id="delivery_method" required class="w-full border p-2 rounded">
+  <option value="shipping">Shipping</option>
+  <option value="pickup">Pickup (Requires admin approval)</option>
+</select>
+
+<div id="shipping-fee-group" class="mt-2">
+  <label for="shipping_fee" class="block text-sm font-medium text-gray-700">🚚 Shipping Fee (CAD)</label>
+  <input type="number" id="shipping_fee" placeholder="e.g. 5.00" class="w-full border p-2 rounded" />
+</div>
+
+<p id="pickup-note" class="mt-2 text-sm text-yellow-600 hidden">
+  ⚠️ Pickup requests require admin approval. Please contact support.
+</p>
 
      <button type="submit" style="background-color: orange; color: white; padding: 10px; border: none; width: 100%; font-weight: bold; border-radius: 4px;">
   ✅ Upload Product
