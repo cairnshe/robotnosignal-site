@@ -100,21 +100,57 @@
     } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     // 🗺️ Canada 省份-城市映射
+// ✅ 替换成这个完整版本
 const provinceCityMap = {
-  "Ontario": ["Toronto", "Ottawa", "Mississauga"],
-  "British Columbia": ["Vancouver", "Victoria", "Richmond"],
-  "Alberta": ["Calgary", "Edmonton", "Red Deer"],
-  "Quebec": ["Montreal", "Quebec City", "Laval"],
-  "Manitoba": ["Winnipeg", "Brandon"],
-  "Saskatchewan": ["Saskatoon", "Regina"],
-  "Nova Scotia": ["Halifax"],
-  "New Brunswick": ["Moncton", "Fredericton"],
-  "Newfoundland and Labrador": ["St. John's"],
-  "Prince Edward Island": ["Charlottetown"],
-  "Northwest Territories": ["Yellowknife"],
-  "Yukon": ["Whitehorse"],
-  "Nunavut": ["Iqaluit"]
+  "Ontario": [
+    "Toronto", "Ottawa", "Mississauga", "Brampton", "Hamilton", "London", "Markham",
+    "Vaughan", "Kitchener", "Windsor", "Richmond Hill", "Oakville", "Burlington",
+    "Greater Sudbury", "Thunder Bay", "Barrie", "Kingston", "Guelph", "Waterloo",
+    "Cambridge", "Whitby", "Ajax", "Milton", "Clarington", "Pickering", "Niagara Falls",
+    "Welland", "Aurora", "Newmarket", "Peterborough", "St. Catharines", "North Bay"
+  ],
+  "British Columbia": [
+    "Vancouver", "Surrey", "Burnaby", "Richmond", "Abbotsford", "Coquitlam", "Kelowna",
+    "Langley", "Victoria", "Nanaimo", "Kamloops", "Chilliwack", "Maple Ridge", "Prince George",
+    "Penticton", "Vernon", "New Westminster", "Port Coquitlam"
+  ],
+  "Alberta": [
+    "Calgary", "Edmonton", "Red Deer", "Lethbridge", "St. Albert", "Medicine Hat", 
+    "Grande Prairie", "Spruce Grove", "Airdrie", "Leduc", "Fort McMurray"
+  ],
+  "Quebec": [
+    "Montreal", "Quebec City", "Laval", "Gatineau", "Longueuil", "Sherbrooke", "Saguenay",
+    "Levis", "Trois-Rivieres", "Terrebonne", "Repentigny", "Brossard", "Drummondville"
+  ],
+  "Manitoba": [
+    "Winnipeg", "Brandon", "Steinbach", "Thompson", "Portage la Prairie"
+  ],
+  "Saskatchewan": [
+    "Saskatoon", "Regina", "Prince Albert", "Moose Jaw", "Yorkton", "Swift Current"
+  ],
+  "Nova Scotia": [
+    "Halifax", "Sydney", "Truro", "New Glasgow", "Kentville"
+  ],
+  "New Brunswick": [
+    "Moncton", "Saint John", "Fredericton", "Dieppe", "Bathurst", "Miramichi"
+  ],
+  "Newfoundland and Labrador": [
+    "St. John's", "Mount Pearl", "Corner Brook", "Gander", "Happy Valley-Goose Bay"
+  ],
+  "Prince Edward Island": [
+    "Charlottetown", "Summerside", "Stratford"
+  ],
+  "Northwest Territories": [
+    "Yellowknife", "Hay River", "Inuvik", "Fort Smith"
+  ],
+  "Yukon": [
+    "Whitehorse", "Dawson City"
+  ],
+  "Nunavut": [
+    "Iqaluit", "Rankin Inlet"
+  ]
 };
+
 
 const provinceSelect = document.getElementById("province");
 const citySelect = document.getElementById("city");
