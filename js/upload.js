@@ -134,11 +134,11 @@ form.addEventListener("submit", async (e) => {
   const city = form["city"].value;
 
   if (!country || !province || !city) {
-    message.innerText = "❌ Please select your shipping address (country, province, city).";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
-    return;
-  }
+  message.innerText = "❌ Please select your shipping address (country, province, city).";
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
+  return;
+}
 
   try {
     await addDoc(collection(db, "products"), {
