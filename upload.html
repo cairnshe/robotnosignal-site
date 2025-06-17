@@ -207,20 +207,19 @@ try {
   });
 
   form.reset();
-    message.style.color = "green";
-    message.innerText = "✅ Product uploaded successfully! Redirecting...";
-    setTimeout(() => {
-      window.location.href = "/main.html";
-    }, 1200);
+  message.style.color = "green";
+  message.innerText = "✅ Product uploaded successfully! Redirecting...";
+  setTimeout(() => {
+    window.location.href = "/main.html";
+  }, 1200);
 
-  } catch (err) {
-    console.error("Upload failed:", err);
-    message.style.color = "red";
-    message.innerText = "❌ Upload failed. Try again.";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
-  }
-});  // ✅ 你必须有这个来结束整个 submit 函数体！
+} catch (err) {
+  console.error("Upload failed:", err);
+  message.style.color = "red";
+  message.innerText = "❌ Upload failed. Try again.";
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
+}
 
 const shippingCheckbox = document.getElementById("shipping_enabled");
 const pickupCheckbox = document.getElementById("pickup_enabled");
