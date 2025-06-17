@@ -10,39 +10,44 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// 🌎 省市数据映射
+// 🌎 完整省市数据映射
 const provinceCityMap = {
-  "Ontario": ["Toronto", "Ottawa", "Mississauga"],
-  "British Columbia": ["Vancouver", "Victoria", "Richmond"],
-  "Alberta": ["Calgary", "Edmonton", "Red Deer"],
-  "Quebec": ["Montreal", "Quebec City", "Laval"],
-  "Manitoba": ["Winnipeg", "Brandon"],
-  "Saskatchewan": ["Saskatoon", "Regina"],
-  "Nova Scotia": ["Halifax"],
-  "New Brunswick": ["Moncton", "Fredericton"],
-  "Newfoundland and Labrador": ["St. John's"],
-  "Prince Edward Island": ["Charlottetown"],
-  "Northwest Territories": ["Yellowknife"],
-  "Yukon": ["Whitehorse"],
-  "Nunavut": ["Iqaluit"]
+  "Alberta": ["Airdrie", "Calgary", "Edmonton", "Fort McMurray", "Grande Prairie", "Leduc", "Lethbridge", "Medicine Hat", "Red Deer", "Spruce Grove", "St. Albert"],
+  "British Columbia": ["Abbotsford", "Burnaby", "Chilliwack", "Coquitlam", "Kamloops", "Kelowna", "Langley", "Maple Ridge", "Nanaimo", "New Westminster", "Penticton", "Prince George", "Richmond", "Surrey", "Vancouver", "Victoria", "Vernon"],
+  "Manitoba": ["Brandon", "Portage la Prairie", "Steinbach", "Thompson", "Winnipeg"],
+  "New Brunswick": ["Bathurst", "Dieppe", "Fredericton", "Miramichi", "Moncton", "Saint John"],
+  "Newfoundland and Labrador": ["Corner Brook", "Gander", "Happy Valley‑Goose Bay", "Mount Pearl", "St. John's"],
+  "Northwest Territories": ["Fort Smith", "Hay River", "Inuvik", "Yellowknife"],
+  "Nova Scotia": ["Halifax", "Kentville", "New Glasgow", "Sydney", "Truro"],
+  "Nunavut": ["Iqaluit", "Rankin Inlet"],
+  "Ontario": ["Ajax", "Aurora", "Barrie", "Brampton", "Burlington", "Cambridge", "Clarington", "Etobicoke", "Guelph", "Hamilton", "Kingston", "Kitchener", "London", "Markham", "Milton", "Mississauga", "Newmarket", "Niagara Falls", "North Bay", "Oakville", "Oshawa", "Ottawa", "Peterborough", "Pickering", "Scarborough", "St. Catharines", "Thunder Bay", "Toronto", "Vaughan", "Waterloo", "Whitby", "Windsor"],
+  "Prince Edward Island": ["Charlottetown", "Stratford", "Summerside"],
+  "Quebec": ["Brossard", "Drummondville", "Gatineau", "Laval", "Levis", "Longueuil", "Montreal", "Quebec City", "Repentigny", "Saguenay", "Sherbrooke", "Trois-Rivières", "Terrebonne"],
+  "Saskatchewan": ["Moose Jaw", "Prince Albert", "Regina", "Saskatoon", "Swift Current", "Yorkton"],
+  "Yukon": ["Dawson City", "Whitehorse"]
 };
 
-// DOM 元素
 const form = document.getElementById("upload-form");
 const message = document.getElementById("message");
 const submitBtn = document.getElementById("submit-btn");
 const provinceSelect = document.getElementById("province");
 const citySelect = document.getElementById("city");
+const pickupProvinceSelect = document.getElementById("pickup_province");
+const pickupCitySelect = document.getElementById("pickup_city");
 
-// 加载省份选项
-for (const province in provinceCityMap) {
-  const option = document.createElement("option");
-  option.value = province;
-  option.textContent = province;
-  provinceSelect.appendChild(option);
+// 加载所有省份
+for (const province of Object.keys(provinceCityMap).sort()) {
+  const option1 = document.createElement("option");
+  option1.value = province;
+  option1.textContent = province;
+  provinceSelect.appendChild(option1);
+
+  const option2 = document.createElement("option");
+  option2.value = province;
+  option2.textContent = province;
+  pickupProvinceSelect.appendChild(option2);
 }
 
-// 监听省份变化，更新城市
 provinceSelect.addEventListener("change", () => {
   const cities = provinceCityMap[provinceSelect.value] || [];
   citySelect.innerHTML = '<option value="">Select City</option>';
@@ -54,11 +59,20 @@ provinceSelect.addEventListener("change", () => {
   });
 });
 
-// 用户状态
+pickupProvinceSelect.addEventListener("change", () => {
+  const cities = provinceCityMap[pickupProvinceSelect.value] || [];
+  pickupCitySelect.innerHTML = '<option value="">Select City</option>';
+  cities.forEach(city => {
+    const option = document.createElement("option");
+    option.value = city;
+    option.textContent = city;
+    pickupCitySelect.appendChild(option);
+  });
+});
+
 let currentUser = null;
 let isMember = false;
 
-// 登录与会员验证
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "/login.html";
@@ -83,7 +97,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// 提交处理
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   message.innerText = "";
@@ -108,11 +121,14 @@ form.addEventListener("submit", async (e) => {
 
   const endsAt = new Date(endsAtRaw);
 
-  // ✅ 交付信息
   const shippingEnabled = form["shipping_enabled"].checked;
   const pickupEnabled = form["pickup_enabled"].checked;
   const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
-  const pickupAddress = pickupEnabled ? form["pickup_address"].value.trim() : "";
+  const pickupCountry = pickupEnabled ? form["pickup_country"].value : "";
+  const pickupProvince = pickupEnabled ? form["pickup_province"].value : "";
+  const pickupCity = pickupEnabled ? form["pickup_city"].value : "";
+
+  const pickupAddress = pickupEnabled ? { country: pickupCountry, province: pickupProvince, city: pickupCity } : null;
 
   if (shippingEnabled && isNaN(parseFloat(form["shipping_fee"].value))) {
     message.innerText = "❌ Please enter a valid shipping fee.";
@@ -121,24 +137,23 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (pickupEnabled && !pickupAddress) {
-    message.innerText = "❌ Please enter a pickup location.";
+  if (pickupEnabled && (!pickupCountry || !pickupProvince || !pickupCity)) {
+    message.innerText = "❌ Please select pickup location.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
   }
 
-  // ✅ 地址字段
   const country = form["country"].value;
   const province = form["province"].value;
   const city = form["city"].value;
 
   if (!country || !province || !city) {
-  message.innerText = "❌ Please select your shipping address (country, province, city).";
-  submitBtn.disabled = false;
-  submitBtn.innerText = "✅ Upload Product";
-  return;
-}
+    message.innerText = "❌ Please select your shipping address (country, province, city).";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
+    return;
+  }
 
   try {
     await addDoc(collection(db, "products"), {
@@ -174,7 +189,6 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-// 💡 显示隐藏切换
 const shippingCheckbox = document.getElementById("shipping_enabled");
 const pickupCheckbox = document.getElementById("pickup_enabled");
 const shippingFeeGroup = document.getElementById("shipping-fee-group");
