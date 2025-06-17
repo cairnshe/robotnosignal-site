@@ -36,6 +36,17 @@ onAuthStateChanged(auth, async (user) => {
       products.push({ id: docSnap.id, ...data });
     });
 
+    // ✅ 发货统计
+const readyToShipCount = products.filter(p => p.order_status === "paid").length;
+const shippedCount = products.filter(p => p.order_status === "shipped").length;
+
+const statsContainer = document.getElementById("order-stats");
+statsContainer.innerHTML = `
+  📊 <strong>Orders Overview:</strong><br>
+  🟢 Ready to ship: ${readyToShipCount}<br>
+  ✅ Already shipped: ${shippedCount}
+`;
+
     const paidOrders = products.filter(p => p.order_status === "paid");
 
     renderPaidOrders(paidOrders);
