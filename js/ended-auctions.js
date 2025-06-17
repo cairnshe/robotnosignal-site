@@ -81,10 +81,13 @@ function renderFilteredAndSorted() {
   const sortValue = document.getElementById('sort-select').value;
 
   let filtered = endedProducts.filter(p => {
-    const name = p.name?.toLowerCase() || '';
-    const desc = p.description?.toLowerCase() || '';
-    return name.includes(keyword) || desc.includes(keyword);
-  });
+  const name = p.name?.toLowerCase() || '';
+  const desc = p.description?.toLowerCase() || '';
+  const seller = p.seller_name?.toLowerCase() || '';
+  const bidder = p.current_bidder?.toLowerCase() || '';
+  return name.includes(keyword) || desc.includes(keyword) || seller.includes(keyword) || bidder.includes(keyword);
+});
+
 
   switch (sortValue) {
     case 'price-asc':
