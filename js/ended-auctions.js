@@ -15,6 +15,15 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/f
 
 const list = document.getElementById('ended-product-list');
 
+let endedProducts = []; // 🔁 全局缓存 ended 商品数据
+
+// 🔍 搜索框监听器
+document.getElementById('search-input').addEventListener('input', renderFilteredAndSorted);
+
+// 🔃 排序选择监听器
+document.getElementById('sort-select').addEventListener('change', renderFilteredAndSorted);
+
+
 async function loadEndedAuctions() {
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
