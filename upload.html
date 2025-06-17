@@ -53,6 +53,31 @@
   </div>
 </div>
 
+<!-- 📍 Seller Shipping Address -->
+<div class="mt-6">
+  <label class="block text-sm font-medium text-gray-700 mb-2">📬 Seller Shipping Address (required)</label>
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div>
+      <label class="text-sm text-gray-600 block mb-1">Country</label>
+      <select id="country" required class="w-full border p-2 rounded">
+        <option value="Canada">Canada</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-sm text-gray-600 block mb-1">Province</label>
+      <select id="province" required class="w-full border p-2 rounded">
+        <option value="">Select Province</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-sm text-gray-600 block mb-1">City</label>
+      <select id="city" required class="w-full border p-2 rounded">
+        <option value="">Select City</option>
+      </select>
+    </div>
+  </div>
+</div>
+      
      <button type="submit" style="background-color: orange; color: white; padding: 10px; border: none; width: 100%; font-weight: bold; border-radius: 4px;">
   ✅ Upload Product
 </button>
@@ -104,26 +129,30 @@
       }
 
     const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
-const deliveryMethod = document.getElementById("delivery_method").value;
-const shippingFeeRaw = document.getElementById("shipping_fee").value;
-const shippingFee = deliveryMethod === "shipping" ? parseFloat(shippingFeeRaw) || 0 : 0;
 
-try {
-  await addDoc(collection(db, "products"), {
-    name,
-    description,
-    price,
-    starting_bid: price,
-    current_bid: 0,
-    image_url: imageUrl,
-    ends_at: endsAt,
-    uploader_uid: currentUser.uid,
-    seller_name: currentUser.email || "anonymous",
-    delivery_method: deliveryMethod,
-    shipping_fee: shippingFee,
-    created_at: serverTimestamp(),
-    bids: []
-  });
+const shippingEnabled = document.getElementById("shipping_enabled").checked;
+const pickupEnabled = document.getElementById("pickup_enabled").checked;
+const shippingFee = shippingEnabled ? parseFloat(document.getElementById("shipping_fee").value) || 0 : 0;
+const pickupAddress = pickupEnabled ? document.getElementById("pickup_address").value.trim() : "";
+
+await addDoc(collection(db, "products"), {
+  name,
+  description,
+  price,
+  starting_bid: price,
+  current_bid: 0,
+  image_url: imageUrl,
+  ends_at: endsAt,
+  uploader_uid: currentUser.uid,
+  seller_name: currentUser.email || "anonymous",
+  shipping_enabled: shippingEnabled,
+  shipping_fee: shippingFee,
+  pickup_enabled: pickupEnabled,
+  pickup_address: pickupAddress,
+  created_at: serverTimestamp(),
+  bids: []
+});
+
 
 message.style.color = "green";
 message.innerText = "✅ Product uploaded successfully! Redirecting...";
@@ -138,18 +167,17 @@ setTimeout(() => {
       }
     });
 
-const deliverySelect = document.getElementById("delivery_method");
+const shippingCheckbox = document.getElementById("shipping_enabled");
+const pickupCheckbox = document.getElementById("pickup_enabled");
 const shippingFeeGroup = document.getElementById("shipping-fee-group");
-const pickupNote = document.getElementById("pickup-note");
+const pickupAddressGroup = document.getElementById("pickup-address-group");
 
-deliverySelect.addEventListener("change", () => {
-  if (deliverySelect.value === "pickup") {
-    shippingFeeGroup.classList.add("hidden");
-    pickupNote.classList.remove("hidden");
-  } else {
-    shippingFeeGroup.classList.remove("hidden");
-    pickupNote.classList.add("hidden");
-  }
+shippingCheckbox.addEventListener("change", () => {
+  shippingFeeGroup.classList.toggle("hidden", !shippingCheckbox.checked);
+});
+
+pickupCheckbox.addEventListener("change", () => {
+  pickupAddressGroup.classList.toggle("hidden", !pickupCheckbox.checked);
 });
     
     logoutBtn.addEventListener("click", async () => {
