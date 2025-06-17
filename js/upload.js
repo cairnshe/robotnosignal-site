@@ -60,28 +60,54 @@ submitBtn.innerText = "Uploading...";
   const price = parseFloat(form["price"].value);
   const description = form["description"].value.trim();
   const imageUrl = form["image_url"].value.trim();
-  const endsIn = parseInt(form["ends_in"].value); // 以分钟计
+ const endsAtRaw = form["ends_at"].value;
 
-  if (!name || isNaN(price) || !description || !imageUrl || isNaN(endsIn)) {
-    message.innerText = "❌ Please fill in all fields correctly.";
-    return;
-  }
+if (!name || isNaN(price) || !description || !imageUrl || !endsAtRaw) {
+  message.innerText = "❌ Please fill in all fields correctly.";
+  return;
+}
 
-  try {
-    const endsAt = new Date(Date.now() + endsIn * 60000); // 当前时间 + endsIn分钟
-    await addDoc(collection(db, "products"), {
-      name,
-      price,
-      description,
-      image_url: imageUrl,
-      uploader_uid: currentUser.uid,
-      seller_name: currentUser.email || "Anonymous",
-      starting_bid: price,
-      bids: [],
-      current_bid: price,
-      ends_at: endsAt,
-      created_at: serverTimestamp()
-    });
+const endsAt = new Date(endsAtRaw);
+
+// ✅ 先定义变量
+const shippingEnabled = form["shipping_enabled"].checked;
+const pickupEnabled = form["pickup_enabled"].checked;
+const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
+const pickupAddress = pickupEnabled ? form["pickup_address"].value.trim() : "";
+
+// ✅ 再进行校验
+if (shippingEnabled && isNaN(parseFloat(form["shipping_fee"].value))) {
+  message.innerText = "❌ Please enter a valid shipping fee.";
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
+  return;
+}
+
+if (pickupEnabled && !pickupAddress) {
+  message.innerText = "❌ Please enter a pickup location.";
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
+  return;
+}
+
+// ✅ 最后执行上传
+await addDoc(collection(db, "products"), {
+  name,
+  price,
+  description,
+  image_url: imageUrl,
+  uploader_uid: currentUser.uid,
+  seller_name: currentUser.email || "Anonymous",
+  starting_bid: price,
+  bids: [],
+  current_bid: price,
+  ends_at: endsAt,
+  shipping_enabled: shippingEnabled,
+  shipping_fee: shippingFee,
+  pickup_enabled: pickupEnabled,
+  pickup_address: pickupAddress,
+  created_at: serverTimestamp()
+});
 
   form.reset();
     message.style.color = "green";
