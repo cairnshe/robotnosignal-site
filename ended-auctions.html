@@ -67,6 +67,19 @@
   </div>
 
   <h1>Ended Auctions</h1>
+<!-- 搜索与排序控件 -->
+<div style="margin-bottom: 1.5rem;">
+  <input type="text" id="search-input" placeholder="🔍 Search by name or description..." style="padding: 0.5rem; width: 60%; max-width: 400px; font-size: 1rem;" />
+
+  <select id="sort-select" style="padding: 0.5rem; margin-left: 1rem; font-size: 1rem;">
+    <option value="default">🔃 Sort by</option>
+    <option value="price-asc">💲 Price: Low to High</option>
+    <option value="price-desc">💰 Price: High to Low</option>
+    <option value="bids-desc">📈 Most Bids</option>
+    <option value="bids-asc">📉 Fewest Bids</option>
+  </select>
+</div>
+  
   <div id="ended-product-list">Loading ended auctions...</div>
 
   <!-- 加载逻辑脚本 -->
