@@ -37,7 +37,7 @@ item.innerHTML = `
   <p><strong>Final Price:</strong> $${finalPrice}</p>
   <p class="${hasWinner ? 'status' : 'unsold'}">
     ${hasWinner
-      ? `Sold to ${product.current_bidder} for $${product.current_bid}`
+      ? `Sold to ${maskEmail(product.current_bidder)} for $${product.current_bid}`
       : 'No bids placed – Unsold'}
   </p>
 `;
