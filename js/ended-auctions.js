@@ -96,12 +96,20 @@ function renderFilteredAndSorted() {
     case 'price-desc':
       filtered.sort((a, b) => (b.current_bid || 0) - (a.current_bid || 0));
       break;
-    case 'bids-desc':
-      filtered.sort((a, b) => (b.bid_count || 0) - (a.bid_count || 0));
-      break;
-    case 'bids-asc':
-      filtered.sort((a, b) => (a.bid_count || 0) - (b.bid_count || 0));
-      break;
+   case 'bids-desc':
+  filtered.sort((a, b) => {
+    const aBids = a.bid_count ?? -1; // 无出价的设为 -1，排最后
+    const bBids = b.bid_count ?? -1;
+    return bBids - aBids;
+  });
+  break;
+case 'bids-asc':
+  filtered.sort((a, b) => {
+    const aBids = a.bid_count ?? Number.MAX_SAFE_INTEGER; // 无出价的设为最大值，排最后
+    const bBids = b.bid_count ?? Number.MAX_SAFE_INTEGER;
+    return aBids - bBids;
+  });
+  break;
     default:
       filtered.sort((a, b) => a.ends_at.seconds - b.ends_at.seconds);
   }
