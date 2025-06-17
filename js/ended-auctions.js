@@ -127,3 +127,7 @@ function renderFilteredAndSorted() {
 
 // ✅ 第三步：调用入口
 loadEndedAuctions();
+
+// 搜索框和排序下拉监听
+document.getElementById('search-input').addEventListener('input', renderFilteredAndSorted);
+document.getElementById('sort-select').addEventListener('change', renderFilteredAndSorted);
