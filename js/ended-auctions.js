@@ -22,21 +22,26 @@ async function loadEndedAuctions() {
     list.innerHTML = '';
 
     ended.forEach(product => {
-      const finalPrice = product.bid_count > 0 ? product.current_bid : 0;
-      const item = document.createElement('div');
-      item.className = 'product';
+     const hasWinner = product.current_bid > 0 && !!product.current_bidder;
+const finalPrice = hasWinner ? product.current_bid : 0;
 
-      item.innerHTML = `
-        <h2>${product.name}</h2>
-        <img src="${product.image_url}" alt="${product.name}" />
-        <p>${product.description}</p>
-        <p><strong>Seller:</strong> ${product.seller_name}</p>
-        <p><strong>Ended at:</strong> ${new Date(product.ends_at.seconds * 1000).toLocaleString()}</p>
-        <p><strong>Final Price:</strong> $${finalPrice}</p>
-        <p class="${product.bid_count > 0 ? 'status' : 'unsold'}">
-          ${product.bid_count > 0 ? `Sold (${product.bid_count} bids)` : 'No bids placed – Unsold'}
-        </p>
-      `;
+const item = document.createElement('div');
+item.className = 'product';
+
+item.innerHTML = `
+  <h2>${product.name}</h2>
+  <img src="${product.image_url}" alt="${product.name}" />
+  <p>${product.description}</p>
+  <p><strong>Seller:</strong> ${product.seller_name}</p>
+  <p><strong>Ended at:</strong> ${new Date(product.ends_at.seconds * 1000).toLocaleString()}</p>
+  <p><strong>Final Price:</strong> $${finalPrice}</p>
+  <p class="${hasWinner ? 'status' : 'unsold'}">
+    ${hasWinner
+      ? `Sold to ${product.current_bidder} for $${product.current_bid}`
+      : 'No bids placed – Unsold'}
+  </p>
+`;
+
 
       list.appendChild(item);
     });
