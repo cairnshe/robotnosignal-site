@@ -10,7 +10,7 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// 🌎 完整省市数据映射
+// ✅ 完整省市映射
 const provinceCityMap = {
   "Alberta": ["Airdrie", "Calgary", "Edmonton", "Fort McMurray", "Grande Prairie", "Leduc", "Lethbridge", "Medicine Hat", "Red Deer", "Spruce Grove", "St. Albert"],
   "British Columbia": ["Abbotsford", "Burnaby", "Chilliwack", "Coquitlam", "Kamloops", "Kelowna", "Langley", "Maple Ridge", "Nanaimo", "New Westminster", "Penticton", "Prince George", "Richmond", "Surrey", "Vancouver", "Victoria", "Vernon"],
@@ -27,16 +27,19 @@ const provinceCityMap = {
   "Yukon": ["Dawson City", "Whitehorse"]
 };
 
+// DOM 引用
 const form = document.getElementById("upload-form");
 const message = document.getElementById("message");
 const submitBtn = document.getElementById("submit-btn");
+
+// 地址选择元素
 const provinceSelect = document.getElementById("province");
 const citySelect = document.getElementById("city");
 const pickupProvinceSelect = document.getElementById("pickup_province");
 const pickupCitySelect = document.getElementById("pickup_city");
 
-// 加载所有省份
-for (const province of Object.keys(provinceCityMap).sort()) {
+// 加载 Seller & Pickup 省份
+for (const province in provinceCityMap) {
   const option1 = document.createElement("option");
   option1.value = province;
   option1.textContent = province;
@@ -48,6 +51,7 @@ for (const province of Object.keys(provinceCityMap).sort()) {
   pickupProvinceSelect.appendChild(option2);
 }
 
+// 城市联动逻辑
 provinceSelect.addEventListener("change", () => {
   const cities = provinceCityMap[provinceSelect.value] || [];
   citySelect.innerHTML = '<option value="">Select City</option>';
@@ -70,6 +74,7 @@ pickupProvinceSelect.addEventListener("change", () => {
   });
 });
 
+// 用户状态 & 会员校验
 let currentUser = null;
 let isMember = false;
 
@@ -79,24 +84,19 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
   currentUser = user;
+  const ref = doc(db, "memberships", user.uid);
+  const snap = await getDoc(ref);
+  const paidUntil = snap.data()?.paid_until?.seconds * 1000;
 
-  try {
-    const docRef = doc(db, "memberships", user.uid);
-    const docSnap = await getDoc(docRef);
-    const paidUntil = docSnap.data()?.paid_until?.seconds * 1000;
-
-    if (paidUntil && paidUntil > Date.now()) {
-      isMember = true;
-    } else {
-      message.innerText = "⛔️ You must be a member to upload products.";
-      form.style.display = "none";
-    }
-  } catch (e) {
-    console.error("Failed to check membership:", e);
-    message.innerText = "⚠️ Failed to verify membership.";
+  if (paidUntil && paidUntil > Date.now()) {
+    isMember = true;
+  } else {
+    message.innerText = "⛔️ You must be a member to upload products.";
+    form.style.display = "none";
   }
 });
 
+// 提交上传
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   message.innerText = "";
@@ -116,29 +116,20 @@ form.addEventListener("submit", async (e) => {
 
   if (!name || isNaN(price) || !description || !imageUrl || !endsAtRaw) {
     message.innerText = "❌ Please fill in all fields correctly.";
-    return;
-  }
-
-  const endsAt = new Date(endsAtRaw);
-
-  const shippingEnabled = form["shipping_enabled"].checked;
-  const pickupEnabled = form["pickup_enabled"].checked;
-  const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
-  const pickupCountry = pickupEnabled ? form["pickup_country"].value : "";
-  const pickupProvince = pickupEnabled ? form["pickup_province"].value : "";
-  const pickupCity = pickupEnabled ? form["pickup_city"].value : "";
-
-  const pickupAddress = pickupEnabled ? { country: pickupCountry, province: pickupProvince, city: pickupCity } : null;
-
-  if (shippingEnabled && isNaN(parseFloat(form["shipping_fee"].value))) {
-    message.innerText = "❌ Please enter a valid shipping fee.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
   }
 
-  if (pickupEnabled && (!pickupCountry || !pickupProvince || !pickupCity)) {
-    message.innerText = "❌ Please select pickup location.";
+  const endsAt = new Date(endsAtRaw);
+
+  // 地址信息
+  const shippingEnabled = form["shipping_enabled"].checked;
+  const pickupEnabled = form["pickup_enabled"].checked;
+  const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
+
+  if (shippingEnabled && isNaN(shippingFee)) {
+    message.innerText = "❌ Please enter a valid shipping fee.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
@@ -149,10 +140,27 @@ form.addEventListener("submit", async (e) => {
   const city = form["city"].value;
 
   if (!country || !province || !city) {
-    message.innerText = "❌ Please select your shipping address (country, province, city).";
+    message.innerText = "❌ Please select your shipping address.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
+  }
+
+  // ✅ Pickup 地址结构化
+  let pickupAddress = null;
+  if (pickupEnabled) {
+    const pCountry = form["pickup_country"].value;
+    const pProvince = form["pickup_province"].value;
+    const pCity = form["pickup_city"].value;
+
+    if (!pCountry || !pProvince || !pCity) {
+      message.innerText = "❌ Please select your pickup address.";
+      submitBtn.disabled = false;
+      submitBtn.innerText = "✅ Upload Product";
+      return;
+    }
+
+    pickupAddress = { country: pCountry, province: pProvince, city: pCity };
   }
 
   try {
@@ -164,8 +172,8 @@ form.addEventListener("submit", async (e) => {
       uploader_uid: currentUser.uid,
       seller_name: currentUser.email || "Anonymous",
       starting_bid: price,
-      bids: [],
       current_bid: price,
+      bids: [],
       ends_at: endsAt,
       shipping_enabled: shippingEnabled,
       shipping_fee: shippingFee,
@@ -178,26 +186,20 @@ form.addEventListener("submit", async (e) => {
     form.reset();
     message.style.color = "green";
     message.innerText = "✅ Product uploaded successfully!";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
   } catch (err) {
-    console.error("Upload failed:", err);
+    console.error("❌ Upload failed:", err);
     message.style.color = "red";
     message.innerText = "❌ Upload failed. Try again.";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
   }
+
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
 });
 
-const shippingCheckbox = document.getElementById("shipping_enabled");
-const pickupCheckbox = document.getElementById("pickup_enabled");
-const shippingFeeGroup = document.getElementById("shipping-fee-group");
-const pickupAddressGroup = document.getElementById("pickup-address-group");
-
-shippingCheckbox.addEventListener("change", () => {
-  shippingFeeGroup.classList.toggle("hidden", !shippingCheckbox.checked);
+// 显示隐藏切换
+document.getElementById("shipping_enabled").addEventListener("change", (e) => {
+  document.getElementById("shipping-fee-group").classList.toggle("hidden", !e.target.checked);
 });
-
-pickupCheckbox.addEventListener("change", () => {
-  pickupAddressGroup.classList.toggle("hidden", !pickupCheckbox.checked);
+document.getElementById("pickup_enabled").addEventListener("change", (e) => {
+  document.getElementById("pickup-address-group").classList.toggle("hidden", !e.target.checked);
 });
