@@ -79,15 +79,15 @@ loadEndedAuctions();
 function renderFilteredAndSorted() {
   const keyword = document.getElementById('search-input').value.toLowerCase();
   const sortValue = document.getElementById('sort-select').value;
+  const soldOnly = document.getElementById('filter-sold-only').checked;
 
   let filtered = endedProducts.filter(p => {
-  const name = p.name?.toLowerCase() || '';
-  const desc = p.description?.toLowerCase() || '';
-  const seller = p.seller_name?.toLowerCase() || '';
-  const bidder = p.current_bidder?.toLowerCase() || '';
-  return name.includes(keyword) || desc.includes(keyword) || seller.includes(keyword) || bidder.includes(keyword);
-});
-
+    const name = p.name?.toLowerCase() || '';
+    const desc = p.description?.toLowerCase() || '';
+    const matchesKeyword = name.includes(keyword) || desc.includes(keyword);
+    const isSold = p.current_bid > 0 && !!p.current_bidder;
+    return matchesKeyword && (!soldOnly || isSold);
+  });
 
   switch (sortValue) {
     case 'price-asc':
