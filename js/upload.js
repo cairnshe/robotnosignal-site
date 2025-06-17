@@ -122,3 +122,17 @@ await addDoc(collection(db, "products"), {
     submitBtn.innerText = "✅ Upload Product";
   }
 });
+
+// 💡 动态显示/隐藏邮寄与自取输入框
+const shippingCheckbox = document.getElementById("shipping_enabled");
+const pickupCheckbox = document.getElementById("pickup_enabled");
+const shippingFeeGroup = document.getElementById("shipping-fee-group");
+const pickupAddressGroup = document.getElementById("pickup-address-group");
+
+shippingCheckbox.addEventListener("change", () => {
+  shippingFeeGroup.classList.toggle("hidden", !shippingCheckbox.checked);
+});
+
+pickupCheckbox.addEventListener("change", () => {
+  pickupAddressGroup.classList.toggle("hidden", !pickupCheckbox.checked);
+});
