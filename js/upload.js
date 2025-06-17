@@ -38,6 +38,18 @@ const citySelect = document.getElementById("city");
 const pickupProvinceSelect = document.getElementById("pickup_province");
 const pickupCitySelect = document.getElementById("pickup_city");
 
+// pickup 地址：省份联动城市
+pickupProvinceSelect.addEventListener("change", () => {
+  const cities = provinceCityMap[pickupProvinceSelect.value] || [];
+  pickupCitySelect.innerHTML = '<option value="">Select City</option>';
+  cities.forEach(city => {
+    const option = document.createElement("option");
+    option.value = city;
+    option.textContent = city;
+    pickupCitySelect.appendChild(option);
+  });
+});
+
 // 加载 Seller & Pickup 省份
 for (const province in provinceCityMap) {
   const option1 = document.createElement("option");
