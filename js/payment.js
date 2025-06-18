@@ -18,6 +18,7 @@ const storage = getStorage();
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('product_id');
 const totalAmount = parseFloat(urlParams.get('total_amount') || "0");
+const deliveryMethod = urlParams.get('method'); // "shipping" or "pickup"
 
 if (!productId) {
   document.getElementById("payment-card").innerHTML = "<p>Invalid product ID.</p>";
