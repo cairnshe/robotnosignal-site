@@ -254,7 +254,23 @@ provinceSelect.addEventListener("change", () => {
 const shippingEnabled = document.getElementById("shipping_enabled").checked;
 const pickupEnabled = document.getElementById("pickup_enabled").checked;
 const shippingFee = shippingEnabled ? parseFloat(document.getElementById("shipping_fee").value) || 0 : 0;
-const pickupAddress = pickupEnabled ? document.getElementById("pickup_address").value.trim() : "";
+
+      let pickupAddress = null;
+if (pickupEnabled) {
+  const pCountry = form["pickup_country"].value;
+  const pProvince = form["pickup_province"].value;
+  const pCity = form["pickup_city"].value;
+
+  if (!pCountry || !pProvince || !pCity) {
+    message.innerText = "❌ Please select your pickup address.";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
+    return;
+  }
+
+  pickupAddress = { country: pCountry, province: pProvince, city: pCity };
+}
+
 
 const country = document.getElementById("country").value;
 const province = document.getElementById("province").value;
