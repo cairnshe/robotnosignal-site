@@ -73,6 +73,14 @@ function renderPaidOrders(orders) {
       <img src="${order.image_url}" alt="${order.name}" />
       <p><strong>Winning Bid:</strong> $${order.winning_bid_amount}</p>
       <p><strong>Buyer:</strong> ${order.winning_bidder}</p>
+
+  <p><strong>Delivery Method:</strong> ${order.payment_info?.delivery_method === "pickup" ? "Pickup" : "Shipping"}</p>
+  ${
+    order.payment_info?.delivery_method === "pickup"
+      ? `<p><strong>Pickup Location:</strong> ${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}</p>`
+      : `<p><strong>Shipping Fee:</strong> $${(order.shipping_fee || 0).toFixed(2)}</p>`
+  }
+      
       <label>Tracking Number:</label>
       <input type="text" id="tracking-${order.id}" placeholder="Enter tracking number" />
       <button class="ship-btn" onclick="markAsShipped('${order.id}', '${order.name}', '${order.winning_bidder}', '${order.image_url}')">Mark as Shipped & Send Email</button>
