@@ -117,20 +117,25 @@ payBtn.innerText = "Pay Now";
 payBtn.addEventListener("click", () => {
   const baseAmount = order.winning_bid_amount || 0;
 
-  // 计算平台手续费
+  // ✅ 新增：计算 shipping fee（仅当 shipping_enabled 为 true）
+  let shippingFee = 0;
+  if (order.shipping_enabled) {
+    shippingFee = order.shipping_fee || 0;
+  }
+
+  // ✅ 平台费：10% + $0.50，最低 $1
   let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
   if (fee < 1) fee = 1;
 
-  // 计算税（仅对 baseAmount + fee 计算）
-  const subtotal = baseAmount + fee;
+  // ✅ 税：对 (base + fee + shipping) 总额征税
+  const subtotal = baseAmount + fee + shippingFee;
   const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
-
-  // 总金额
   const totalToPay = Math.round((subtotal + taxAmount) * 100) / 100;
 
   const confirmPay = confirm(
     `Winning Bid: $${baseAmount.toFixed(2)}\n` +
     `Platform Fee: $${fee.toFixed(2)}\n` +
+    `Shipping Fee: $${shippingFee.toFixed(2)}\n` +
     `Tax (${(taxRate * 100).toFixed(2)}%): $${taxAmount.toFixed(2)}\n` +
     `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
     `Do you want to proceed to pay?`
