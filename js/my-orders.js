@@ -21,20 +21,13 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-
 
 // ⬇️ 新增：读取用户的省份字段设置税率
 
-if (userSnap.exists()) {
-  const province = userSnap.data().province;
-  if (province && PROVINCE_TAX_RATES.hasOwnProperty(province)) {
-    taxRate = PROVINCE_TAX_RATES[province];
-  }
-}
-
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "/login.html";
     return;
   }
 
-  // ✅ 正确地放到 onAuthStateChanged 回调中
+  // ✅ 移到这里：读取用户省份来设置税率
   try {
     const userDocRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userDocRef);
@@ -44,8 +37,8 @@ onAuthStateChanged(auth, async (user) => {
         taxRate = PROVINCE_TAX_RATES[province];
       }
     }
-  } catch (err) {
-    console.error("⚠️ Failed to load user tax province:", err);
+  } catch (e) {
+    console.warn("⚠️ Failed to load user's province:", e);
   }
 
   try {
@@ -56,10 +49,8 @@ onAuthStateChanged(auth, async (user) => {
       products.push({ id: docSnap.id, ...data });
     });
 
-    // 只保留自己赢得的订单
     const myOrders = products.filter(p => p.winning_bidder === user.email);
 
-    // 分组渲染
     renderOrders(myOrders, "pending_payment", "orders-to-pay-list");
     renderOrders(myOrders, "paid", "orders-paid-list");
     renderOrders(myOrders, "shipped", "orders-shipped-list");
