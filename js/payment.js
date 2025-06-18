@@ -61,6 +61,14 @@ onAuthStateChanged(auth, async (user) => {
   <p><strong>Order Status:</strong> ${product.order_status}</p>
   <p><strong>Total To Pay:</strong> $${totalAmount.toFixed(2)}</p>
 
+  ${deliveryMethod === "pickup" ? `
+  <p><strong>Delivery Method:</strong> Pickup</p>
+  <p><strong>Pickup Location:</strong> ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'}</p>
+` : `
+  <p><strong>Delivery Method:</strong> Shipping</p>
+  <p><strong>Shipping Fee:</strong> $${(product.shipping_fee || 0).toFixed(2)}</p>
+`}
+
  <p><strong>Upload Payment Receipt (Optional, Not Enabled Yet):</strong></p>
 <input type="file" id="receipt-file" accept="image/*" disabled style="opacity: 0.5;" />
 <p style="font-size: 0.9em; color: gray;">(Image upload not enabled yet. Please fill in your payment note below.)</p>
@@ -88,12 +96,13 @@ onAuthStateChanged(auth, async (user) => {
     await updateDoc(productRef, {
       order_status: "paid",
       payment_info: {
-        paid_at: new Date(),
-        paid_amount: totalAmount,
-        method: "manual_test",
-        receipt_url: "", // 未来有 Storage 再用
-        buyer_note: buyerNote // ⭐️ 存买家备注
-      }
+      paid_at: new Date(),
+      paid_amount: totalAmount,
+      method: "manual_test",
+      receipt_url: "", // 未来有 Storage 再用
+      buyer_note: buyerNote,
+      delivery_method: deliveryMethod // ⭐️ 存配送方式
+    }
     });
 
     alert("✅ Payment successful!");
