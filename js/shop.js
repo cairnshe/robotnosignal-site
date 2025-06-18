@@ -199,17 +199,12 @@ item.innerHTML = `
     <div style="text-align: right; font-size: 0.85rem; color: #666;">
       ${
         product.shipping_enabled && product.pickup_enabled
-          ? `Shipping & Pickup available`
+          ? `Shipping & Pickup available (pickup at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
           : product.shipping_enabled
           ? `Shipping only`
           : product.pickup_enabled
-          ? `Pickup only`
+          ? `Pickup only (at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
           : `No delivery options`
-      }<br/>
-      ${
-        product.shipping_enabled && product.shipping_fee !== undefined
-          ? `📦 Fee: $${product.shipping_fee.toFixed(2)}`
-          : ''
       }
     </div>
   </div>
