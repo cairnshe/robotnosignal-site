@@ -116,57 +116,61 @@ payBtn.className = "pay-btn";
 payBtn.innerText = "Pay Now";
 payBtn.addEventListener("click", () => {
   const baseAmount = order.winning_bid_amount || 0;
+  let deliveryMethod = "shipping";
+  let shippingFee = order.shipping_enabled ? (order.shipping_fee || 0) : 0;
 
-  let shippingFee = 0;
-  let deliveryMethod = "shipping"; // 默认是 shipping
+  // 创建模态框
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.width = "100%";
+  modal.style.height = "100%";
+  modal.style.backgroundColor = "rgba(0,0,0,0.5)";
+  modal.style.display = "flex";
+  modal.style.justifyContent = "center";
+  modal.style.alignItems = "center";
+  modal.innerHTML = `
+    <div style="background:white; padding:20px; border-radius:8px; width:300px; text-align:left;">
+      <h3>Choose Delivery Option</h3>
+      ${order.shipping_enabled ? `<label><input type="radio" name="method" value="shipping" checked> Shipping ($${shippingFee.toFixed(2)})</label><br>` : ""}
+      ${order.pickup_enabled ? `<label><input type="radio" name="method" value="pickup"> Pickup at ${order.pickup_address?.city || "?"}, ${order.pickup_address?.province || "?"}, ${order.pickup_address?.country || "?"}</label><br>` : ""}
+      <br>
+      <button id="confirm-delivery">Confirm</button>
+      <button id="cancel-delivery" style="margin-left:10px;">Cancel</button>
+    </div>
+  `;
 
-  if (order.pickup_enabled && order.shipping_enabled) {
-    const choice = prompt(
-      `This product supports both shipping and pickup.\n\n` +
-      `Enter "shipping" to pay for shipping ($${(order.shipping_fee || 0).toFixed(2)}),\n` +
-      `or "pickup" to arrange local pickup at:\n${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}`
+  document.body.appendChild(modal);
+
+  document.getElementById("cancel-delivery").onclick = () => modal.remove();
+
+  document.getElementById("confirm-delivery").onclick = () => {
+    const selected = modal.querySelector("input[name='method']:checked")?.value || "shipping";
+    deliveryMethod = selected;
+    shippingFee = (selected === "shipping") ? (order.shipping_fee || 0) : 0;
+    modal.remove();
+
+    let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
+    if (fee < 1) fee = 1;
+
+    const subtotal = baseAmount + fee + shippingFee;
+    const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
+    const totalToPay = Math.round((subtotal + taxAmount) * 100) / 100;
+
+    const confirmPay = confirm(
+      `Winning Bid: $${baseAmount.toFixed(2)}\n` +
+      `Platform Fee: $${fee.toFixed(2)}\n` +
+      `Shipping Fee: $${shippingFee.toFixed(2)}\n` +
+      `Tax (${(taxRate * 100).toFixed(2)}%): $${taxAmount.toFixed(2)}\n` +
+      `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
+      `Do you want to proceed to pay?`
     );
 
-    if (!choice) return; // 用户取消
-
-    if (choice.toLowerCase() === "pickup") {
-      deliveryMethod = "pickup";
-      shippingFee = 0;
-    } else if (choice.toLowerCase() === "shipping") {
-      shippingFee = order.shipping_fee || 0;
-    } else {
-      alert("Invalid choice. Please enter 'shipping' or 'pickup'.");
-      return;
+    if (confirmPay) {
+      window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}&method=${deliveryMethod}`;
     }
-
-  } else if (order.shipping_enabled) {
-    deliveryMethod = "shipping";
-    shippingFee = order.shipping_fee || 0;
-  } else if (order.pickup_enabled) {
-    deliveryMethod = "pickup";
-    shippingFee = 0;
-    alert(`This product supports pickup only at:\n${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}`);
-  }
-
-  let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
-  if (fee < 1) fee = 1;
-
-  const subtotal = baseAmount + fee + shippingFee;
-  const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
-  const totalToPay = Math.round((subtotal + taxAmount) * 100) / 100;
-
-  const confirmPay = confirm(
-    `Winning Bid: $${baseAmount.toFixed(2)}\n` +
-    `Platform Fee: $${fee.toFixed(2)}\n` +
-    `Shipping Fee: $${shippingFee.toFixed(2)}\n` +
-    `Tax (${(taxRate * 100).toFixed(2)}%): $${taxAmount.toFixed(2)}\n` +
-    `Total to Pay: $${totalToPay.toFixed(2)}\n\n` +
-    `Do you want to proceed to pay?`
-  );
-
-  if (confirmPay) {
-    window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}&method=${deliveryMethod}`;
-  }
+  };
 });
 
       card.appendChild(payBtn); // ✅ 这里放 if 里面最后一行
