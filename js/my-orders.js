@@ -20,8 +20,7 @@ let taxRate = 0.13;
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // ⬇️ 新增：读取用户的省份字段设置税率
-const userDocRef = doc(db, "users", user.uid);
-const userSnap = await getDoc(userDocRef);
+
 if (userSnap.exists()) {
   const province = userSnap.data().province;
   if (province && PROVINCE_TAX_RATES.hasOwnProperty(province)) {
