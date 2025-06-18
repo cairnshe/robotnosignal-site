@@ -193,20 +193,17 @@ async function loadProducts() {
         const bids = product.bids || [];
         const highest = bids.length === 0 ? 0 : (product.current_bid || product.starting_bid || 0);
 
-item.innerHTML = `
-  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-    <h2>${product.name}</h2>
-    <div style="text-align: right; font-size: 0.85rem; color: #666;">
-      ${
-        product.shipping_enabled && product.pickup_enabled
-          ? `Shipping & Pickup available (pickup at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
-          : product.shipping_enabled
-          ? `Shipping only`
-          : product.pickup_enabled
-          ? `Pickup only (at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
-          : `No delivery options`
-      }
-    </div>
+<div style="text-align: right; font-size: 0.85rem; color: #666;">
+  ${
+    product.shipping_enabled && product.pickup_enabled
+      ? `Shipping & Pickup available (pickup at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
+      : product.shipping_enabled
+      ? `Shipping only<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
+      : product.pickup_enabled
+      ? `Pickup only (at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
+      : `No delivery options`
+  }
+</div>
   </div>
 
   <img src="${product.image_url}" alt="${product.name}" />
