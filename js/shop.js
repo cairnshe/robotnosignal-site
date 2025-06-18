@@ -200,6 +200,8 @@ item.innerHTML = `
   <p><strong>Current Bid:</strong> $${highest}</p>
   <p>${product.description}</p>
   <p><strong>Seller:</strong> ${product.seller_name}</p>
+  ${product.shipping_enabled && product.shipping_address ? `<p><strong>Shipping available to:</strong> ${product.shipping_address.city}, ${product.shipping_address.province}, ${product.shipping_address.country}</p>` : ''}
+${product.pickup_enabled && product.pickup_address ? `<p><strong>Pickup available in:</strong> ${product.pickup_address.city}, ${product.pickup_address.province}, ${product.pickup_address.country}</p>` : ''}
   <p><strong>Seller Address:</strong> ${product.shipping_address?.city || 'Unknown'}, ${product.shipping_address?.province || 'Unknown'}, ${product.shipping_address?.country || 'Unknown'}</p>
   <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
   <div class="bid-input">
