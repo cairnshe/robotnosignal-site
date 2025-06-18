@@ -117,17 +117,40 @@ payBtn.innerText = "Pay Now";
 payBtn.addEventListener("click", () => {
   const baseAmount = order.winning_bid_amount || 0;
 
-  // ✅ 新增：计算 shipping fee（仅当 shipping_enabled 为 true）
   let shippingFee = 0;
-  if (order.shipping_enabled) {
+  let deliveryMethod = "shipping"; // 默认是 shipping
+
+  if (order.pickup_enabled && order.shipping_enabled) {
+    const choice = prompt(
+      `This product supports both shipping and pickup.\n\n` +
+      `Enter "shipping" to pay for shipping ($${(order.shipping_fee || 0).toFixed(2)}),\n` +
+      `or "pickup" to arrange local pickup at:\n${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}`
+    );
+
+    if (!choice) return; // 用户取消
+
+    if (choice.toLowerCase() === "pickup") {
+      deliveryMethod = "pickup";
+      shippingFee = 0;
+    } else if (choice.toLowerCase() === "shipping") {
+      shippingFee = order.shipping_fee || 0;
+    } else {
+      alert("Invalid choice. Please enter 'shipping' or 'pickup'.");
+      return;
+    }
+
+  } else if (order.shipping_enabled) {
+    deliveryMethod = "shipping";
     shippingFee = order.shipping_fee || 0;
+  } else if (order.pickup_enabled) {
+    deliveryMethod = "pickup";
+    shippingFee = 0;
+    alert(`This product supports pickup only at:\n${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}`);
   }
 
-  // ✅ 平台费：10% + $0.50，最低 $1
   let fee = Math.round(baseAmount * 0.10 * 100) / 100 + 0.5;
   if (fee < 1) fee = 1;
 
-  // ✅ 税：对 (base + fee + shipping) 总额征税
   const subtotal = baseAmount + fee + shippingFee;
   const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
   const totalToPay = Math.round((subtotal + taxAmount) * 100) / 100;
@@ -142,7 +165,7 @@ payBtn.addEventListener("click", () => {
   );
 
   if (confirmPay) {
-    window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}`;
+    window.location.href = `/payment.html?product_id=${order.id}&total_amount=${totalToPay}&method=${deliveryMethod}`;
   }
 });
 
