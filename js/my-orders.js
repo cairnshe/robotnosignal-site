@@ -35,6 +35,17 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  // ✅ 把省份税率逻辑搬到这里来
+  const userDocRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userDocRef);
+  if (userSnap.exists()) {
+    const province = userSnap.data().province;
+    if (province && PROVINCE_TAX_RATES.hasOwnProperty(province)) {
+      taxRate = PROVINCE_TAX_RATES[province];
+    }
+  }
+
+  // 🔽 原本查询 Firestore 的逻辑保留在这里
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
     const products = [];
@@ -43,10 +54,8 @@ onAuthStateChanged(auth, async (user) => {
       products.push({ id: docSnap.id, ...data });
     });
 
-    // 只保留自己赢得的订单
     const myOrders = products.filter(p => p.winning_bidder === user.email);
 
-    // 分组渲染
     renderOrders(myOrders, "pending_payment", "orders-to-pay-list");
     renderOrders(myOrders, "paid", "orders-paid-list");
     renderOrders(myOrders, "shipped", "orders-shipped-list");
