@@ -180,6 +180,28 @@ const provinceCityMap = {
 const provinceSelect = document.getElementById("province");
 const citySelect = document.getElementById("city");
 
+const pickupProvinceSelect = document.getElementById("pickup_province");
+const pickupCitySelect = document.getElementById("pickup_city");
+
+pickupProvinceSelect.addEventListener("change", () => {
+  const cities = provinceCityMap[pickupProvinceSelect.value] || [];
+  pickupCitySelect.innerHTML = '<option value="">Select City</option>';
+  cities.forEach(city => {
+    const option = document.createElement("option");
+    option.value = city;
+    option.textContent = city;
+    pickupCitySelect.appendChild(option);
+  });
+});
+
+// 加载 pickup 省份列表
+for (const province in provinceCityMap) {
+  const option = document.createElement("option");
+  option.value = province;
+  option.textContent = province;
+  pickupProvinceSelect.appendChild(option);
+}
+    
 // 加载所有省份
 for (const province in provinceCityMap) {
   const option = document.createElement("option");
