@@ -113,7 +113,7 @@ ${deliveryMethod === "pickup" ? `
       method: "manual_test",
       receipt_url: "", // 未来有 Storage 再用
       buyer_note: buyerNote,
-      delivery_method: deliveryMethod // ⭐️ 存配送方式
+      delivery_method: deliveryMethod, // ⭐️ 存配送方式
       pickup_code: pickupCode  // ✅ 加在这里
     }
     });
