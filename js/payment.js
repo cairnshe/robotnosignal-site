@@ -10,6 +10,16 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
+// 生成 6 位提取码（避免易混字符）
+function generatePickupCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去掉易混淆字符 like I, O, 1, 0
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 // 初始化 Storage
 const storage = getStorage();
 
@@ -61,9 +71,10 @@ onAuthStateChanged(auth, async (user) => {
   <p><strong>Order Status:</strong> ${product.order_status}</p>
   <p><strong>Total To Pay:</strong> $${totalAmount.toFixed(2)}</p>
 
-  ${deliveryMethod === "pickup" ? `
+${deliveryMethod === "pickup" ? `
   <p><strong>Delivery Method:</strong> Pickup</p>
   <p><strong>Pickup Location:</strong> ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'}</p>
+  <p><strong>Pickup Code:</strong> (will be shown after payment)</p>
 ` : `
   <p><strong>Delivery Method:</strong> Shipping</p>
   <p><strong>Shipping Fee:</strong> $${(product.shipping_fee || 0).toFixed(2)}</p>
@@ -92,6 +103,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   try {
+    const pickupCode = deliveryMethod === "pickup" ? generatePickupCode() : null;
     // 更新 Firestore
     await updateDoc(productRef, {
       order_status: "paid",
