@@ -142,7 +142,7 @@ const pickupEnabled = form["pickup_enabled"].checked;
 let shippingFee = 0;
 if (shippingEnabled) {
   const shippingFeeRaw = form["shipping_fee"].value.trim();
-  if (!shippingFeeRaw) {
+  if (shippingFeeRaw === "") {
     const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
     if (!confirmZero) {
       message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
