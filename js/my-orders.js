@@ -196,6 +196,22 @@ payBtn.addEventListener("click", () => {
       card.appendChild(payBtn); // ✅ 这里放 if 里面最后一行
     }
 
+ // ✅ 插入评论按钮：如果订单状态是 shipped 或 completed，显示 Review Seller 按钮
+    if (["shipped", "completed"].includes(order.order_status)) {
+      const reviewBtn = document.createElement("button");
+      reviewBtn.innerText = "📝 Review Seller";
+      reviewBtn.className = "pay-btn";
+      reviewBtn.style.backgroundColor = "#007BFF";
+      reviewBtn.onclick = () => {
+        const review = prompt("Please enter your review for the seller:");
+        if (review) {
+          alert("Thank you! Your review has been submitted.");
+          // 🔧 TODO: 将 review 写入 Firestore
+        }
+      };
+      card.appendChild(reviewBtn);
+    }
+    
     container.appendChild(card); // ✅ 每张 card 最后 append 到 container
   });
 }
