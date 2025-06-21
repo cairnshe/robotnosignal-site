@@ -101,20 +101,31 @@ if (order.order_status === "shipped") {
 
     // ⭐️ 新增 → 如果是 paid/shipped/completed → 显示 buyer_note（如果有）
   // ⭐️ 如果是 pickup 且状态为 paid/shipped/completed，显示 Pickup Code 警告
-if (
-  ["paid", "shipped", "completed"].includes(order.order_status) &&
-  order.payment_info?.delivery_method === "pickup" &&
-  order.payment_info?.pickup_code
-) {
-  const codeP = document.createElement("p");
-  codeP.innerHTML = `<strong>Pickup Code:</strong> <span style="font-size: 1.1em; font-weight: bold;">${order.payment_info.pickup_code}</span>`;
-  card.appendChild(codeP);
+// ⭐️ 如果是 paid/shipped/completed
+if (["paid", "shipped", "completed"].includes(order.order_status)) {
+  // 显示 buyer_note（如果有）
+  const buyerNote = order.payment_info?.buyer_note || "";
+  if (buyerNote) {
+    const noteP = document.createElement("p");
+    noteP.innerHTML = `<strong>Buyer Note:</strong> ${buyerNote}`;
+    card.appendChild(noteP);
+  }
 
-  const warnP = document.createElement("p");
-  warnP.style.color = "darkred";
-  warnP.style.fontSize = "0.9em";
-  warnP.innerText = "⚠️ Do NOT share this code until you have received the item!";
-  card.appendChild(warnP);
+  // 如果是 pickup，显示提取码
+  if (
+    order.payment_info?.delivery_method === "pickup" &&
+    order.payment_info?.pickup_code
+  ) {
+    const codeP = document.createElement("p");
+    codeP.innerHTML = `<strong>Pickup Code:</strong> <span style="font-size: 1.1em; font-weight: bold;">${order.payment_info.pickup_code}</span>`;
+    card.appendChild(codeP);
+
+    const warnP = document.createElement("p");
+    warnP.style.color = "darkred";
+    warnP.style.fontSize = "0.9em";
+    warnP.innerText = "⚠️ Do NOT share this code until you have received the item!";
+    card.appendChild(warnP);
+  }
 }
 
 
