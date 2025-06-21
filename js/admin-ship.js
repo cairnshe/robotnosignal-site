@@ -74,12 +74,18 @@ function renderPaidOrders(orders) {
       <p><strong>Winning Bid:</strong> $${order.winning_bid_amount}</p>
       <p><strong>Buyer:</strong> ${order.winning_bidder}</p>
 
-  <p><strong>Delivery Method:</strong> ${order.payment_info?.delivery_method === "pickup" ? "Pickup" : "Shipping"}</p>
-  ${
-    order.payment_info?.delivery_method === "pickup"
-      ? `<p><strong>Pickup Location:</strong> ${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}</p>`
-      : `<p><strong>Shipping Fee:</strong> $${(order.shipping_fee || 0).toFixed(2)}</p>`
-  }
+ <p><strong>Delivery Method:</strong> ${order.payment_info?.delivery_method === "pickup" ? "Pickup" : "Shipping"}</p>
+
+${
+  order.payment_info?.delivery_method === "pickup"
+    ? `
+      <p><strong>Pickup Location:</strong> ${order.pickup_address?.city || 'Unknown'}, ${order.pickup_address?.province || 'Unknown'}, ${order.pickup_address?.country || 'Unknown'}</p>
+      <p><strong>Pickup Code:</strong> <span style="font-weight:bold;">${order.payment_info?.pickup_code || '(missing)'}</span></p>
+      <p style="color:darkred; font-size:0.9em;">⚠️ Remind buyer: Do NOT share this code until they have received the item.</p>
+    `
+    : `<p><strong>Shipping Fee:</strong> $${(order.shipping_fee || 0).toFixed(2)}</p>`
+}
+
       
       <label>Tracking Number:</label>
       <input type="text" id="tracking-${order.id}" placeholder="Enter tracking number" />
@@ -110,11 +116,25 @@ window.markAsShipped = async function (productId, productName, buyerEmail, image
 
   // Send Email via EmailJS
   try {
+// 先获取该商品信息
+const productSnap = await getDoc(doc(db, "products", productId));
+const productData = productSnap.exists() ? productSnap.data() : {};
+const deliveryMethod = productData.payment_info?.delivery_method || "shipping";
+
+const isPickup = deliveryMethod === "pickup";
+const pickupCode = productData.payment_info?.pickup_code || "";
+const pickupAddr = productData.pickup_address
+  ? `${productData.pickup_address.city || ''}, ${productData.pickup_address.province || ''}, ${productData.pickup_address.country || ''}`
+  : "";
+
 const params = {
   product_name: productName,
   tracking_number: trackingNumber,
   to_email: buyerEmail,
-  image_url: imageUrl
+  image_url: imageUrl,
+  pickup_info: isPickup
+    ? `This is a PICKUP order.\nPickup Code: ${pickupCode}\nPickup Location: ${pickupAddr}\n\n⚠️ Please DO NOT share your pickup code until you have received your item.`
+    : ""
 };
 
 
