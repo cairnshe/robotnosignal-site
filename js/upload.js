@@ -140,12 +140,17 @@ form.addEventListener("submit", async (e) => {
   const pickupEnabled = form["pickup_enabled"].checked;
   const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
 
-  if (shippingEnabled && isNaN(shippingFee)) {
-    message.innerText = "❌ Please enter a valid shipping fee.";
+if (shippingEnabled && isNaN(shippingFee)) {
+  const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
+  if (!confirmZero) {
+    message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
   }
+  shippingFee = 0;
+}
+
 
   const country = form["country"].value;
   const province = form["province"].value;
