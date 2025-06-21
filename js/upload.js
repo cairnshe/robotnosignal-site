@@ -136,32 +136,42 @@ form.addEventListener("submit", async (e) => {
   const endsAt = new Date(endsAtRaw);
 
   // 地址信息
-  const shippingEnabled = form["shipping_enabled"].checked;
-  const pickupEnabled = form["pickup_enabled"].checked;
-  const shippingFee = shippingEnabled ? parseFloat(form["shipping_fee"].value) || 0 : 0;
+ const shippingEnabled = form["shipping_enabled"].checked;
+const pickupEnabled = form["pickup_enabled"].checked;
 
-if (shippingEnabled && isNaN(shippingFee)) {
-  const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
-  if (!confirmZero) {
-    message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
-    return;
+let shippingFee = 0;
+if (shippingEnabled) {
+  const shippingFeeRaw = form["shipping_fee"].value.trim();
+  if (!shippingFeeRaw) {
+    const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
+    if (!confirmZero) {
+      message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
+      submitBtn.disabled = false;
+      submitBtn.innerText = "✅ Upload Product";
+      return;
+    }
+    shippingFee = 0;
+  } else {
+    shippingFee = parseFloat(shippingFeeRaw);
+    if (isNaN(shippingFee)) {
+      message.innerText = "❌ Please enter a valid shipping fee.";
+      submitBtn.disabled = false;
+      submitBtn.innerText = "✅ Upload Product";
+      return;
+    }
   }
-  shippingFee = 0;
 }
 
+const country = form["country"].value;
+const province = form["province"].value;
+const city = form["city"].value;
 
-  const country = form["country"].value;
-  const province = form["province"].value;
-  const city = form["city"].value;
-
-  if (!country || !province || !city) {
-    message.innerText = "❌ Please select your shipping address.";
-    submitBtn.disabled = false;
-    submitBtn.innerText = "✅ Upload Product";
-    return;
-  }
+if (!country || !province || !city) {
+  message.innerText = "❌ Please select your shipping address.";
+  submitBtn.disabled = false;
+  submitBtn.innerText = "✅ Upload Product";
+  return;
+}
 
   // ✅ Pickup 地址结构化
   let pickupAddress = null;
