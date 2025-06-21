@@ -202,13 +202,60 @@ payBtn.addEventListener("click", () => {
       reviewBtn.innerText = "📝 Review Seller";
       reviewBtn.className = "pay-btn";
       reviewBtn.style.backgroundColor = "#007BFF";
-      reviewBtn.onclick = () => {
-        const review = prompt("Please enter your review for the seller:");
-        if (review) {
-          alert("Thank you! Your review has been submitted.");
-          // 🔧 TODO: 将 review 写入 Firestore
-        }
-      };
+  reviewBtn.onclick = () => {
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.width = "100%";
+  modal.style.height = "100%";
+  modal.style.backgroundColor = "rgba(0,0,0,0.5)";
+  modal.style.display = "flex";
+  modal.style.justifyContent = "center";
+  modal.style.alignItems = "center";
+  modal.innerHTML = `
+    <div style="background:white; padding:20px; border-radius:8px; width:300px; text-align:left;">
+      <h3>Rate Seller</h3>
+      <label><input type="radio" name="rating" value="positive" checked> 👍 Good</label><br>
+      <label><input type="radio" name="rating" value="negative"> 👎 Bad</label><br><br>
+      <textarea id="review-text" rows="4" placeholder="Write your review..." style="width:100%;"></textarea><br><br>
+      <button id="submit-review">Submit</button>
+      <button id="cancel-review" style="margin-left:10px;">Cancel</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("cancel-review").onclick = () => modal.remove();
+
+  document.getElementById("submit-review").onclick = async () => {
+    const rating = modal.querySelector("input[name='rating']:checked")?.value;
+    const text = document.getElementById("review-text").value.trim();
+    if (!text) {
+      alert("Please write something.");
+      return;
+    }
+
+    modal.remove();
+
+    try {
+      const reviewRef = doc(db, "reviews", `${order.id}_${auth.currentUser.uid}`);
+      await setDoc(reviewRef, {
+        product_id: order.id,
+        seller_uid: order.uploader_uid,
+        buyer_uid: auth.currentUser.uid,
+        buyer_email: auth.currentUser.email,
+        rating: rating,
+        review_text: text,
+        created_at: new Date()
+      });
+      alert("✅ Review submitted!");
+    } catch (err) {
+      console.error("❌ Failed to submit review:", err);
+      alert("❌ Failed to submit review.");
+    }
+  };
+};
+
       card.appendChild(reviewBtn);
     }
     
