@@ -57,22 +57,22 @@ onAuthStateChanged(auth, async (user) => {
     if (querySnap.empty) {
       productsDiv.innerHTML = "<p>You haven't uploaded any products yet.</p>";
     } else {
-      querySnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const item = document.createElement("div");
-        item.className = "product";
-        item.innerHTML = `
-          <h3>${data.name}</h3>
-          <img src="${data.image_url}" alt="${data.name}" />
-          <p><strong>Description:</strong> ${data.description}</p>
-          <p><strong>Price:</strong> $${data.price}</p>
-          <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
-        `;
-        productsDiv.appendChild(item);
-      });
+     querySnap.forEach((docSnap) => {
+  const data = docSnap.data();
+  const item = document.createElement("div");
+  item.className = "product";
+  item.innerHTML = `
+    <h3>${data.name}</h3>
+    <img src="${data.image_url}" alt="${data.name}" />
+    <p><strong>Description:</strong> ${data.description}</p>
+    <p><strong>Price:</strong> $${data.price}</p>
+    <p><strong>Current Bid:</strong> $${data.current_bid || "N/A"}</p>
+  `;
+  productsDiv.appendChild(item);
 
-// 🔽 插入在 forEach(docSnap => { ... }) 内部，每个商品 item 创建完之后：
-loadReviewsForProduct(user.uid, docSnap.id, item);
+  // ✅ 正确插入调用：在 item 构建完成后执行加载评论逻辑
+  loadReviewsForProduct(user.uid, docSnap.id, item);
+});
 
 // 🔽 添加这个函数在 onAuthStateChanged 外面或下面都可以：
 async function loadReviewsForProduct(sellerUid, productId, item) {
