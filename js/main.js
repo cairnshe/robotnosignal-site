@@ -23,6 +23,11 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+    // 全局评价计数器
+  let totalGood = 0;
+  let totalBad = 0;
+  let totalCount = 0;
+
   // 显示头像（若有）
   if (user.photoURL) {
     avatarEl.src = user.photoURL;
