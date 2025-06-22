@@ -21,7 +21,6 @@ const PROVINCE_TAX_RATES = {
 // 默认税率（如果用户没有填写省份，就用安大略省）
 let taxRate = 0.13;
 
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // ⬇️ 新增：读取用户的省份字段设置税率
 
