@@ -71,13 +71,16 @@ onAuthStateChanged(auth, async (user) => {
         productsDiv.appendChild(item);
       });
 
-// 🔽 插入在 forEach 内部，每个商品 item 后
-(async () => {
+// 🔽 插入在 forEach(docSnap => { ... }) 内部，每个商品 item 创建完之后：
+loadReviewsForProduct(user.uid, docSnap.id, item);
+
+// 🔽 添加这个函数在 onAuthStateChanged 外面或下面都可以：
+async function loadReviewsForProduct(sellerUid, productId, item) {
   try {
     const reviewQ = query(
       collection(db, "reviews"),
-      where("seller_uid", "==", user.uid),
-      where("product_id", "==", docSnap.id)  // ⬅️ 精确匹配当前商品
+      where("seller_uid", "==", sellerUid),
+      where("product_id", "==", productId)
     );
     const reviewSnap = await getDocs(reviewQ);
     const reviews = [];
@@ -126,7 +129,7 @@ onAuthStateChanged(auth, async (user) => {
   } catch (e) {
     console.warn("⚠️ Failed to load reviews:", e);
   }
-})();
+}
 
       
     }
