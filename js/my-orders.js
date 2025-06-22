@@ -232,10 +232,7 @@ modal.innerHTML = `
   document.getElementById("submit-review").onclick = async () => {
     const rating = modal.querySelector("input[name='rating']:checked")?.value;
     const text = document.getElementById("review-text").value.trim();
-    if (!text) {
-      alert("Please write something.");
-      return;
-    }
+
 
     modal.remove();
 
