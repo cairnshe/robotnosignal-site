@@ -57,7 +57,7 @@ onAuthStateChanged(auth, async (user) => {
     if (querySnap.empty) {
       productsDiv.innerHTML = "<p>You haven't uploaded any products yet.</p>";
     } else {
-     querySnap.forEach((docSnap) => {
+    querySnap.forEach((docSnap) => {
   const data = docSnap.data();
   const item = document.createElement("div");
   item.className = "product";
@@ -70,7 +70,7 @@ onAuthStateChanged(auth, async (user) => {
   `;
   productsDiv.appendChild(item);
 
-  // ✅ 正确插入调用：在 item 构建完成后执行加载评论逻辑
+  // ✅ 放在这里！确保在每次渲染商品后调用
   loadReviewsForProduct(user.uid, docSnap.id, item);
 });
 
