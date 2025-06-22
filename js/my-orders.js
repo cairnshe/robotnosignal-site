@@ -213,16 +213,18 @@ payBtn.addEventListener("click", () => {
   modal.style.display = "flex";
   modal.style.justifyContent = "center";
   modal.style.alignItems = "center";
-  modal.innerHTML = `
-    <div style="background:white; padding:20px; border-radius:8px; width:300px; text-align:left;">
-      <h3>Rate Seller</h3>
-      <label><input type="radio" name="rating" value="positive" checked> 👍 Good</label><br>
-      <label><input type="radio" name="rating" value="negative"> 👎 Bad</label><br><br>
-      <textarea id="review-text" rows="4" placeholder="Write your review..." style="width:100%;"></textarea><br><br>
-      <button id="submit-review">Submit</button>
-      <button id="cancel-review" style="margin-left:10px;">Cancel</button>
-    </div>
-  `;
+modal.innerHTML = `
+  <div style="background:white; padding:20px; border-radius:8px; width:300px; text-align:left;">
+    <h3>Rate Seller</h3>
+    <label><input type="radio" name="rating" value="good" checked> 👍 Good</label><br>
+    <label><input type="radio" name="rating" value="bad"> 👎 Bad</label><br><br>
+    <label for="review-text">Review (optional):</label><br>
+    <textarea id="review-text" rows="4" placeholder="Write your review..." style="width:100%;"></textarea><br><br>
+    <button id="submit-review">Submit</button>
+    <button id="cancel-review" style="margin-left:10px;">Cancel</button>
+  </div>
+`;
+
   document.body.appendChild(modal);
 
   document.getElementById("cancel-review").onclick = () => modal.remove();
