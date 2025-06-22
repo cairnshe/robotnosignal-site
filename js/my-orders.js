@@ -4,8 +4,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import {
   collection,
-  getDocs
+  getDocs,
+  doc,
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
 
 // 加拿大各省税率映射表（仅支持主要省份）
 const PROVINCE_TAX_RATES = {
