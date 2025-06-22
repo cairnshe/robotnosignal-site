@@ -70,6 +70,65 @@ onAuthStateChanged(auth, async (user) => {
         `;
         productsDiv.appendChild(item);
       });
+
+// 🔽 插入在 forEach 内部，每个商品 item 后
+(async () => {
+  try {
+    const reviewQ = query(
+      collection(db, "reviews"),
+      where("seller_uid", "==", user.uid),
+      where("product_id", "==", docSnap.id)  // ⬅️ 精确匹配当前商品
+    );
+    const reviewSnap = await getDocs(reviewQ);
+    const reviews = [];
+    reviewSnap.forEach(r => reviews.push(r.data()));
+
+    const good = reviews.filter(r => r.rating === "good");
+    const bad = reviews.filter(r => r.rating === "bad");
+    const total = reviews.length;
+    const rate = total > 0 ? Math.round((good.length / total) * 100) : 0;
+
+    const summary = document.createElement("p");
+    summary.innerHTML = `👍 Good: ${good.length} | 👎 Bad: ${bad.length} | ⭐️ Good Rate: ${rate}%`;
+    summary.style.fontWeight = "bold";
+    item.appendChild(summary);
+
+    if (total > 0) {
+      const commentBox = document.createElement("div");
+      commentBox.style.marginTop = "0.5em";
+
+      const visibleCount = 3;
+      const showReviews = reviews.slice(0, visibleCount);
+      showReviews.forEach(r => {
+        const p = document.createElement("p");
+        p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
+        commentBox.appendChild(p);
+      });
+
+      if (total > visibleCount) {
+        const toggleBtn = document.createElement("button");
+        toggleBtn.innerText = "Show More";
+        toggleBtn.style.marginTop = "0.5em";
+        toggleBtn.onclick = () => {
+          commentBox.innerHTML = "";
+          reviews.forEach(r => {
+            const p = document.createElement("p");
+            p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
+            commentBox.appendChild(p);
+          });
+          toggleBtn.remove();
+        };
+        item.appendChild(toggleBtn);
+      }
+
+      item.appendChild(commentBox);
+    }
+  } catch (e) {
+    console.warn("⚠️ Failed to load reviews:", e);
+  }
+})();
+
+      
     }
   } catch (err) {
     console.error("Failed to load user products:", err);
