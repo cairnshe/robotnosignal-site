@@ -20,6 +20,10 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/fi
 console.log("📡 Listening for auth state change...");
 
 let currentUser = null;
+let totalGood = 0;
+let totalBad = 0;
+let totalCount = 0;
+
 let isMember = false;
 const list = document.getElementById('product-list');
 
@@ -238,7 +242,8 @@ item.innerHTML = `
   product.current_bidder || '',
   product.bids || []
 );
-
+loadReviewsForProduct(product.seller_uid, product.id, item);
+        
         if (currentUser) {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
   const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
@@ -459,3 +464,65 @@ window.toggleFavorite = async function(productId) {
     console.error("❌ Error toggling favorite:", err);
   }
 };
+
+
+async function loadReviewsForProduct(sellerUid, productId, item) {
+  try {
+    const reviewQ = query(
+      collection(db, "reviews"),
+      where("seller_uid", "==", sellerUid),
+      where("product_id", "==", productId)
+    );
+    const reviewSnap = await getDocs(reviewQ);
+    const reviews = [];
+    reviewSnap.forEach(r => reviews.push(r.data()));
+
+    const good = reviews.filter(r => r.rating === "good");
+    const bad = reviews.filter(r => r.rating === "bad");
+    const total = reviews.length;
+
+    totalGood += good.length;
+    totalBad += bad.length;
+    totalCount += total;
+
+    const rate = total > 0 ? Math.round((good.length / total) * 100) : 0;
+    const summary = document.createElement("p");
+    summary.innerHTML = `👍 Good: ${good.length} | 👎 Bad: ${bad.length} | ⭐️ Good Rate: ${rate}%`;
+    summary.style.fontWeight = "bold";
+    item.appendChild(summary);
+
+    if (total > 0) {
+      const commentBox = document.createElement("div");
+      commentBox.style.marginTop = "0.5em";
+
+      const visibleCount = 3;
+      const showReviews = reviews.slice(0, visibleCount);
+      showReviews.forEach(r => {
+        const p = document.createElement("p");
+        p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
+        commentBox.appendChild(p);
+      });
+
+      if (total > visibleCount) {
+        const toggleBtn = document.createElement("button");
+        toggleBtn.innerText = "Show More";
+        toggleBtn.style.marginTop = "0.5em";
+        toggleBtn.onclick = () => {
+          commentBox.innerHTML = "";
+          reviews.forEach(r => {
+            const p = document.createElement("p");
+            p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
+            commentBox.appendChild(p);
+          });
+          toggleBtn.remove();
+        };
+        item.appendChild(toggleBtn);
+      }
+
+      item.appendChild(commentBox);
+    }
+
+  } catch (e) {
+    console.warn("⚠️ Failed to load reviews:", e);
+  }
+}
