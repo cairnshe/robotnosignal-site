@@ -89,8 +89,14 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
     const good = reviews.filter(r => r.rating === "good");
     const bad = reviews.filter(r => r.rating === "bad");
     const total = reviews.length;
-    const rate = total > 0 ? Math.round((good.length / total) * 100) : 0;
 
+    // ✅ 更新总计数（作用域：外部变量）
+    totalGood += good.length;
+    totalBad += bad.length;
+    totalCount += total;
+
+    // ✅ 每个商品内部显示
+    const rate = total > 0 ? Math.round((good.length / total) * 100) : 0;
     const summary = document.createElement("p");
     summary.innerHTML = `👍 Good: ${good.length} | 👎 Bad: ${bad.length} | ⭐️ Good Rate: ${rate}%`;
     summary.style.fontWeight = "bold";
@@ -126,6 +132,12 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
 
       item.appendChild(commentBox);
     }
+
+    // ✅ 所有商品都加载完后更新顶部汇总显示
+    const summaryEl = document.getElementById("review-summary");
+    const goodRate = totalCount > 0 ? ((totalGood / totalCount) * 100).toFixed(2) : "0.00";
+    summaryEl.innerHTML = `📊 Total Reviews: ${totalCount} | 👍 ${totalGood} | 👎 ${totalBad} | ⭐️ Good Rate: ${goodRate}%`;
+
   } catch (e) {
     console.warn("⚠️ Failed to load reviews:", e);
   }
