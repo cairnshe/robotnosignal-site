@@ -491,36 +491,6 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
     summary.style.fontWeight = "bold";
     item.appendChild(summary);
 
-    if (total > 0) {
-      const commentBox = document.createElement("div");
-      commentBox.style.marginTop = "0.5em";
-
-      const visibleCount = 3;
-      const showReviews = reviews.slice(0, visibleCount);
-      showReviews.forEach(r => {
-        const p = document.createElement("p");
-        p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
-        commentBox.appendChild(p);
-      });
-
-      if (total > visibleCount) {
-        const toggleBtn = document.createElement("button");
-        toggleBtn.innerText = "Show More";
-        toggleBtn.style.marginTop = "0.5em";
-        toggleBtn.onclick = () => {
-          commentBox.innerHTML = "";
-          reviews.forEach(r => {
-            const p = document.createElement("p");
-            p.innerText = `💬 ${r.review_text || "(No comment)"} – (${r.rating.toUpperCase()})`;
-            commentBox.appendChild(p);
-          });
-          toggleBtn.remove();
-        };
-        item.appendChild(toggleBtn);
-      }
-
-      item.appendChild(commentBox);
-    }
 
   } catch (e) {
     console.warn("⚠️ Failed to load reviews:", e);
