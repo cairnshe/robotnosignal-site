@@ -469,6 +469,11 @@ window.toggleFavorite = async function(productId) {
 
 
 async function loadReviewsForProduct(sellerUid, productId, item) {
+  if (!sellerUid || !productId) {
+    console.warn("❌ Missing sellerUid or productId:", sellerUid, productId);
+    return;
+  }
+
   try {
     const reviewQ = query(
       collection(db, "reviews"),
@@ -492,7 +497,6 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
     summary.innerHTML = `👍 Good: ${good.length} | 👎 Bad: ${bad.length} | ⭐️ Good Rate: ${rate}%`;
     summary.style.fontWeight = "bold";
     item.appendChild(summary);
-
 
   } catch (e) {
     console.warn("⚠️ Failed to load reviews:", e);
