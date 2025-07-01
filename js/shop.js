@@ -11,7 +11,9 @@ import {
   arrayUnion,
   getDoc,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 
