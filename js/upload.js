@@ -197,6 +197,7 @@ if (!country || !province || !city) {
       description,
       image_url: imageUrl,
       uploader_uid: currentUser.uid,
+        seller_uid: currentUser.uid,
       seller_name: currentUser.email || "Anonymous",
       starting_bid: price,
       current_bid: price,
