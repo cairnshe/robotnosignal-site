@@ -190,35 +190,40 @@ if (!country || !province || !city) {
     pickupAddress = { country: pCountry, province: pProvince, city: pCity };
   }
 
-  try {
-    await addDoc(collection(db, "products"), {
-      name,
-      price,
-      description,
-      image_url: imageUrl,
-      uploader_uid: currentUser.uid,
-        seller_uid: currentUser.uid,
-      seller_name: currentUser.email || "Anonymous",
-      starting_bid: price,
-      current_bid: price,
-      bids: [],
-      ends_at: endsAt,
-      shipping_enabled: shippingEnabled,
-      shipping_fee: shippingFee,
-      pickup_enabled: pickupEnabled,
-      pickup_address: pickupAddress,
-      shipping_address: { country, province, city },
-      created_at: serverTimestamp()
-    });
+ try {
+  const docRef = await addDoc(collection(db, "products"), {
+    name,
+    price,
+    description,
+    image_url: imageUrl,
+    uploader_uid: currentUser.uid,
+    seller_uid: currentUser.uid,
+    seller_name: currentUser.email || "Anonymous",
+    starting_bid: price,
+    current_bid: price,
+    bids: [],
+    ends_at: endsAt,
+    shipping_enabled: shippingEnabled,
+    shipping_fee: shippingFee,
+    pickup_enabled: pickupEnabled,
+    pickup_address: pickupAddress,
+    shipping_address: { country, province, city },
+    created_at: serverTimestamp()
+  });
 
-    form.reset();
-    message.style.color = "green";
-    message.innerText = "✅ Product uploaded successfully!";
-  } catch (err) {
-    console.error("❌ Upload failed:", err);
-    message.style.color = "red";
-    message.innerText = "❌ Upload failed. Try again.";
-  }
+  // ✅ 新增：补写 product_id 字段
+  await updateDoc(docRef, {
+    product_id: docRef.id
+  });
+
+  form.reset();
+  message.style.color = "green";
+  message.innerText = "✅ Product uploaded successfully!";
+} catch (err) {
+  console.error("❌ Upload failed:", err);
+  message.style.color = "red";
+  message.innerText = "❌ Upload failed. Try again.";
+}
 
   submitBtn.disabled = false;
   submitBtn.innerText = "✅ Upload Product";
