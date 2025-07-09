@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fix Product IDs | Admin Tool</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    import {
+      getAuth,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    // ✅ 替换为你的 firebase-config.js 中的配置
+    const firebaseConfig = {
+      apiKey: "你的 apiKey",
+      authDomain: "你的 authDomain",
+      projectId: "你的 projectId",
+      storageBucket: "你的 storageBucket",
+      messagingSenderId: "你的 messagingSenderId",
+      appId: "你的 appId"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const adminUID = "MT9pIgLkiadS3WbsLeui8zR3umd2"; // ✅ 管理员 UID
+
+    onAuthStateChanged(auth, async (user) => {
+      const output = document.getElementById("output");
+
+      if (!user || user.uid !== adminUID) {
+        output.innerText = "❌ Access denied. You must be logged in as admin.";
+        return;
+      }
+
+      output.innerText = "🔍 Running script to fix product_id fields...";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        let updated = 0;
+
+        for (const docSnap of querySnapshot.docs) {
+          const data = docSnap.data();
+          if (!data.product_id || data.product_id !== docSnap.id) {
+            const productRef = doc(db, "products", docSnap.id);
+            await updateDoc(productRef, { product_id: docSnap.id });
+            updated++;
+          }
+        }
+
+        output.innerText = `✅ Completed. Updated ${updated} product(s) with missing or incorrect product_id field.`;
+
+      } catch (e) {
+        console.error("❌ Error updating product_id:", e);
+        output.innerText = "❌ Failed to update product IDs. See console for details.";
+      }
+    });
+  </script>
+</head>
+<body style="font-family: sans-serif; padding: 2rem;">
+  <h2>🛠 Fix Product IDs Tool</h2>
+  <p id="output">Authenticating...</p>
+</body>
+</html>
