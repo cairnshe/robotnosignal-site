@@ -89,6 +89,15 @@ async function updateStatus(docId, newStatus) {
   try {
     const docRef = doc(db, "barter_offers", docId);
     await updateDoc(docRef, { status: newStatus });
+
+    // ✅ 如果接受，则锁定产品
+    if (newStatus === "accepted") {
+      const offerSnap = await getDoc(docRef);
+      const offerData = offerSnap.data();
+      const productRef = doc(db, "products", offerData.product_id);
+      await updateDoc(productRef, { barter_locked: true });
+    }
+
     document.getElementById(`status-${docId}`).innerText = newStatus;
     alert(`Offer ${newStatus}`);
     location.reload();
