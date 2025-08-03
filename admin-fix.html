@@ -34,36 +34,46 @@
 
     const adminUID = "MT9pIgLkiadS3WbsLeui8zR3umd2"; // ✅ 管理员 UID
     
-    onAuthStateChanged(auth, async (user) => {
-      const output = document.getElementById("output");
+ onAuthStateChanged(auth, async (user) => {
+  const output = document.getElementById("output");
 
-      if (!user || user.uid !== adminUID) {
-        output.innerText = "❌ Access denied. You must be logged in as admin.";
-        return;
+  console.log("👤 Firebase Auth user:", user);
+
+  if (!user) {
+    output.innerText = "❌ Access denied. Not logged in.";
+    return;
+  }
+
+  console.log("✅ Logged in UID:", user.uid);
+
+  if (user.uid !== adminUID) {
+    output.innerText = "❌ Access denied. You are logged in, but not admin.";
+    return;
+  }
+
+  output.innerText = "🔍 Running script to fix product_id fields...";
+
+  try {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    let updated = 0;
+
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+      if (!data.product_id || data.product_id !== docSnap.id) {
+        const productRef = doc(db, "products", docSnap.id);
+        await updateDoc(productRef, { product_id: docSnap.id });
+        updated++;
       }
+    }
 
-      output.innerText = "🔍 Running script to fix product_id fields...";
+    output.innerText = `✅ Completed. Updated ${updated} product(s) with missing or incorrect product_id field.`;
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        let updated = 0;
+  } catch (e) {
+    console.error("❌ Error updating product_id:", e);
+    output.innerText = "❌ Failed to update product IDs. See console for details.";
+  }
+});
 
-        for (const docSnap of querySnapshot.docs) {
-          const data = docSnap.data();
-          if (!data.product_id || data.product_id !== docSnap.id) {
-            const productRef = doc(db, "products", docSnap.id);
-            await updateDoc(productRef, { product_id: docSnap.id });
-            updated++;
-          }
-        }
-
-        output.innerText = `✅ Completed. Updated ${updated} product(s) with missing or incorrect product_id field.`;
-
-      } catch (e) {
-        console.error("❌ Error updating product_id:", e);
-        output.innerText = "❌ Failed to update product IDs. See console for details.";
-      }
-    });
   </script>
 </head>
 <body style="font-family: sans-serif; padding: 2rem;">
