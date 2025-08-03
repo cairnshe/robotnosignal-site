@@ -18,14 +18,14 @@
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-    // ✅ 替换为你的 firebase-config.js 中的配置
+     // ✅ 你的真实 Firebase 配置
     const firebaseConfig = {
-      apiKey: "你的 apiKey",
-      authDomain: "你的 authDomain",
-      projectId: "你的 projectId",
-      storageBucket: "你的 storageBucket",
-      messagingSenderId: "你的 messagingSenderId",
-      appId: "你的 appId"
+      apiKey: "AIzaSyCVkYG9GqtAgkky7oSypbKrZLGtNg4xQRE",
+      authDomain: "robot-no-signal.firebaseapp.com",
+      projectId: "robot-no-signal",
+      storageBucket: "robot-no-signal.appspot.com",
+      messagingSenderId: "498714313223",
+      appId: "1:498714313223:web:f2aa2039f94e5fa6749e08"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -33,7 +33,7 @@
     const auth = getAuth(app);
 
     const adminUID = "MT9pIgLkiadS3WbsLeui8zR3umd2"; // ✅ 管理员 UID
-
+    
     onAuthStateChanged(auth, async (user) => {
       const output = document.getElementById("output");
 
