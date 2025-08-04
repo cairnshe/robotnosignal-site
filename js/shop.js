@@ -235,8 +235,28 @@ item.innerHTML = `
   </div>
 `;
 
-        list.appendChild(item);
-        startCountdown(
+ list.appendChild(item);
+
+// ✅ 插入这段判断是否锁定
+if (product.barter_locked === true) {
+  const bidInput = item.querySelector(`#input-${product.id}`);
+  const bidBtn = item.querySelector(`#bid-btn-${product.id}`);
+
+  if (bidInput) bidInput.disabled = true;
+  if (bidBtn) {
+    bidBtn.disabled = true;
+    bidBtn.textContent = "🔒 Locked for Barter";
+    bidBtn.style.backgroundColor = "#ccc";
+    bidBtn.style.cursor = "not-allowed";
+  }
+
+  const lockNotice = document.createElement("p");
+  lockNotice.textContent = "🔒 This item is locked for a barter transaction.";
+  lockNotice.className = "text-sm text-red-600 font-medium mt-2";
+  item.appendChild(lockNotice);
+}
+
+startCountdown(
   `cd-${product.id}`,
   endsAt,
   product.id,
@@ -245,6 +265,7 @@ item.innerHTML = `
   product.bids || []
 );
 loadReviewsForProduct(product.seller_uid, product.id, item);
+
         
         if (currentUser) {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
