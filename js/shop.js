@@ -361,6 +361,13 @@ window.placeBid = async function(productId, currentBid) {
     const productSnap = await getDoc(productRef);
     const productData = productSnap.data();
 
+    // 🔒 如果商品已锁定，则阻止出价
+if (productData.barter_locked === true) {
+  error.style.color = 'red';
+  error.innerText = "🔒 This item is locked for barter. Bidding is disabled.";
+  return;
+}
+
     const bids = productData.bids || [];
     const startingBid = productData.starting_bid || 0;
     const highestMaxBid = bids.length ? Math.max(...bids.map(b => b.max_bid || b.amount || 0)) : startingBid;
