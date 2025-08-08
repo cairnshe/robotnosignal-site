@@ -552,3 +552,30 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
     console.warn("⚠️ Failed to load reviews:", e);
   }
 }
+
+// 🔒 Buyer submits barter request for a product
+window.submitBarterRequest = async function(productId) {
+  const textarea = document.getElementById(`barter-message-${productId}`);
+  const message = textarea.value.trim();
+
+  if (!message) {
+    alert("Please describe your barter offer.");
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, "products", productId, "barter_requests", currentUser.uid), {
+      user_email: currentUser.email,
+      user_uid: currentUser.uid,
+      offer_message: message,
+      submitted_at: new Date()
+    });
+
+    alert("✅ Your barter request has been submitted!");
+    document.getElementById(`barter-modal-${productId}`).style.display = 'none';
+    textarea.value = '';
+  } catch (e) {
+    console.error("❌ Failed to submit barter request:", e);
+    alert("Error submitting barter request.");
+  }
+};
