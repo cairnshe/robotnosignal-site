@@ -254,6 +254,28 @@ if (product.barter_locked === true) {
   lockNotice.textContent = "🔒 This item is locked for a barter transaction.";
   lockNotice.className = "text-sm text-red-600 font-medium mt-2";
   item.appendChild(lockNotice);
+
+  const barterBtn = document.createElement("button");
+barterBtn.textContent = "💬 Request Barter";
+barterBtn.className = "mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700";
+barterBtn.onclick = () => {
+  document.getElementById(`barter-modal-${product.id}`).style.display = 'block';
+};
+item.appendChild(barterBtn);
+
+// Modal HTML
+const modalHTML = `
+  <div id="barter-modal-${product.id}" class="barter-modal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+    background:white; padding:1rem; border:1px solid #ccc; border-radius:8px; z-index:1000; max-width:90%;">
+    <h3 class="text-lg font-semibold mb-2">Barter Request for "${product.name}"</h3>
+    <textarea id="barter-message-${product.id}" rows="4" class="w-full border p-2 rounded" placeholder="Describe what you want to offer for exchange..."></textarea>
+    <div class="flex justify-end space-x-2 mt-3">
+      <button onclick="submitBarterRequest('${product.id}')" class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700">Submit</button>
+      <button onclick="document.getElementById('barter-modal-${product.id}').style.display='none'" class="bg-gray-300 px-4 py-1 rounded hover:bg-gray-400">Cancel</button>
+    </div>
+  </div>
+`;
+item.insertAdjacentHTML('beforeend', modalHTML);
 }
 
 startCountdown(
