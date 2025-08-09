@@ -590,13 +590,3 @@ window.submitBarterRequest = async function(productId) {
     alert("Error submitting barter request.");
   }
 };
-
-
-    alert("✅ Your barter request has been submitted!");
-    document.getElementById(`barter-modal-${productId}`).style.display = 'none';
-    textarea.value = '';
-  } catch (e) {
-    console.error("❌ Failed to submit barter request:", e);
-    alert("Error submitting barter request.");
-  }
-};
