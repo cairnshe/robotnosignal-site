@@ -268,13 +268,20 @@ const modalHTML = `
   <div id="barter-modal-${product.id}" class="barter-modal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
     background:white; padding:1rem; border:1px solid #ccc; border-radius:8px; z-index:1000; max-width:90%;">
     <h3 class="text-lg font-semibold mb-2">Barter Request for "${product.name}"</h3>
-    <textarea id="barter-message-${product.id}" rows="4" class="w-full border p-2 rounded" placeholder="Describe what you want to offer for exchange..."></textarea>
+
+    <label for="barter-message-${product.id}" class="block font-medium mb-1">Offer Description</label>
+    <textarea id="barter-message-${product.id}" rows="4" class="w-full border p-2 rounded mb-4" placeholder="Describe what you want to offer for exchange..."></textarea>
+
+    <label for="barter-extra-${product.id}" class="block font-medium mb-1">💰 How much extra would you pay? (optional)</label>
+    <input type="number" id="barter-extra-${product.id}" step="0.01" min="0" class="w-full border p-2 rounded mb-4" placeholder="e.g. 5.00">
+
     <div class="flex justify-end space-x-2 mt-3">
       <button onclick="submitBarterRequest('${product.id}')" class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700">Submit</button>
       <button onclick="document.getElementById('barter-modal-${product.id}').style.display='none'" class="bg-gray-300 px-4 py-1 rounded hover:bg-gray-400">Cancel</button>
     </div>
   </div>
 `;
+
 item.insertAdjacentHTML('beforeend', modalHTML);
 }
 
@@ -556,7 +563,9 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
 // 🔒 Buyer submits barter request for a product
 window.submitBarterRequest = async function(productId) {
   const textarea = document.getElementById(`barter-message-${productId}`);
+  const extraInput = document.getElementById(`barter-extra-${productId}`);
   const message = textarea.value.trim();
+  const extra = parseFloat(extraInput.value.trim());
 
   if (!message) {
     alert("Please describe your barter offer.");
@@ -568,8 +577,20 @@ window.submitBarterRequest = async function(productId) {
       user_email: currentUser.email,
       user_uid: currentUser.uid,
       offer_message: message,
+      extra_cash_offer: isNaN(extra) ? 0 : extra,
       submitted_at: new Date()
     });
+
+    alert("✅ Your barter request has been submitted!");
+    document.getElementById(`barter-modal-${productId}`).style.display = 'none';
+    textarea.value = '';
+    extraInput.value = '';
+  } catch (e) {
+    console.error("❌ Failed to submit barter request:", e);
+    alert("Error submitting barter request.");
+  }
+};
+
 
     alert("✅ Your barter request has been submitted!");
     document.getElementById(`barter-modal-${productId}`).style.display = 'none';
