@@ -16,6 +16,13 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
