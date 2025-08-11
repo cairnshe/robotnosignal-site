@@ -282,6 +282,9 @@ const modalHTML = `
     <label for="barter-extra-${product.id}" class="block font-medium mb-1">💰 How much extra would you pay? (optional)</label>
     <input type="number" id="barter-extra-${product.id}" step="0.01" min="0" class="w-full border p-2 rounded mb-4" placeholder="e.g. 5.00">
 
+    <label for="barter-file-${product.id}" class="block font-medium mb-1">📎 Attach a file (optional)</label>
+    <input type="file" id="barter-file-${product.id}" class="w-full border p-2 rounded mb-4" accept="image/*,audio/*,video/*,application/pdf">
+
     <div class="flex justify-end space-x-2 mt-3">
       <button onclick="submitBarterRequest('${product.id}')" class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700">Submit</button>
       <button onclick="document.getElementById('barter-modal-${product.id}').style.display='none'" class="bg-gray-300 px-4 py-1 rounded hover:bg-gray-400">Cancel</button>
@@ -567,33 +570,80 @@ async function loadReviewsForProduct(sellerUid, productId, item) {
   }
 }
 
-// 🔒 Buyer submits barter request for a product
+// 🔒 Buyer submits barter request for a product (with optional extra cash + attachment)
 window.submitBarterRequest = async function(productId) {
-  const textarea = document.getElementById(`barter-message-${productId}`);
+  const textarea   = document.getElementById(`barter-message-${productId}`);
   const extraInput = document.getElementById(`barter-extra-${productId}`);
-  const message = textarea.value.trim();
-  const extra = parseFloat(extraInput.value.trim());
+  const fileInput  = document.getElementById(`barter-file-${productId}`);
 
+  const message = (textarea?.value || '').trim();
+  const extraRaw = (extraInput?.value || '').trim();
+  const extra = parseFloat(extraRaw);
+  const safeExtra = isNaN(extra) || extra < 0 ? 0 : extra;
+
+  if (!currentUser) {
+    alert("Please log in first.");
+    return;
+  }
   if (!message) {
     alert("Please describe your barter offer.");
     return;
   }
 
+  // 防重复提交
+  const modal = document.getElementById(`barter-modal-${productId}`);
+  const submitBtn = modal?.querySelector(`button.bg-green-600`);
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Submitting..."; }
+
+  let attachment = null;
+
   try {
-    await setDoc(doc(db, "products", productId, "barter_requests", currentUser.uid), {
+    // 1) 如果选择了文件 → 上传到 Storage
+    const file = fileInput?.files?.[0];
+    if (file) {
+      // 简单大小限制（25MB）
+      const MAX_BYTES = 25 * 1024 * 1024;
+      if (file.size > MAX_BYTES) {
+        throw new Error("File is too large. Please keep it under 25MB.");
+      }
+
+      const storage = getStorage(); // 默认 app
+      const path = `barter_attachments/${productId}/${currentUser.uid}_${Date.now()}_${file.name}`;
+      const sRef = storageRef(storage, path);
+
+      await uploadBytes(sRef, file);
+      const url = await getDownloadURL(sRef);
+
+      attachment = {
+        url,
+        path,
+        file_name: file.name,
+        mime_type: file.type || 'application/octet-stream',
+        size: file.size
+      };
+    }
+
+    // 2) 写入 Firestore（包含金额 + 可选附件）
+    const payload = {
       user_email: currentUser.email,
       user_uid: currentUser.uid,
       offer_message: message,
-      extra_cash_offer: isNaN(extra) ? 0 : extra,
+      extra_cash_offer: safeExtra,
       submitted_at: new Date()
-    });
+    };
+    if (attachment) payload.attachment = attachment;
+
+    await setDoc(doc(db, "products", productId, "barter_requests", currentUser.uid), payload);
 
     alert("✅ Your barter request has been submitted!");
-    document.getElementById(`barter-modal-${productId}`).style.display = 'none';
-    textarea.value = '';
-    extraInput.value = '';
+    if (modal) modal.style.display = 'none';
+    if (textarea) textarea.value = '';
+    if (extraInput) extraInput.value = '';
+    if (fileInput) fileInput.value = '';
   } catch (e) {
     console.error("❌ Failed to submit barter request:", e);
-    alert("Error submitting barter request.");
+    alert(e?.message || "Error submitting barter request.");
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit"; }
   }
 };
