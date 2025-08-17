@@ -295,6 +295,15 @@ const modalHTML = `
 item.insertAdjacentHTML('beforeend', modalHTML);
 }
 
+// 仅卖家可见：打印该商品的所有 barter 请求到控制台
+if (currentUser && currentUser.uid === product.seller_uid) {
+  const dbgBtn = document.createElement("button");
+  dbgBtn.textContent = "🧪 Console: Barter Requests";
+  dbgBtn.className = "mt-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800";
+  dbgBtn.onclick = () => window.debugListBarterRequests(product.id);
+  item.appendChild(dbgBtn);
+}
+        
 startCountdown(
   `cd-${product.id}`,
   endsAt,
