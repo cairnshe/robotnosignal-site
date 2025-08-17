@@ -647,3 +647,17 @@ window.submitBarterRequest = async function(productId) {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Submit"; }
   }
 };
+
+// 🧪 Print all barter requests of a product to Console (seller-only debug)
+window.debugListBarterRequests = async function(productId) {
+  try {
+    const snap = await getDocs(collection(db, "products", productId, "barter_requests"));
+    const rows = [];
+    snap.forEach(d => rows.push({ doc_id: d.id, ...d.data() }));
+    console.table(rows);
+    alert(`Printed ${rows.length} barter requests to console.`);
+  } catch (e) {
+    console.error("❌ Failed to list barter requests:", e);
+    alert("Error listing barter requests (see console).");
+  }
+};
