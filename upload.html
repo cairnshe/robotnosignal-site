@@ -226,120 +226,165 @@ provinceSelect.addEventListener("change", () => {
     const message = document.getElementById("message");
     const logoutBtn = document.getElementById("logout-btn");
 
-    let currentUser = null;
+    
+// [ADD] 提交按钮引用（你的代码里后面多处用到了 submitBtn，但没有定义）
+const submitBtn = document.getElementById("submit-btn");
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "/login.html";
-      } else {
-        currentUser = user;
-      }
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const description = document.getElementById("description").value.trim();
-      const price = parseFloat(document.getElementById("price").value);
-      const imageUrl = document.getElementById("image_url").value.trim();
-      const endsAtRaw = document.getElementById("ends_at").value;
-
-      if (!name || !description || !imageUrl || isNaN(price)) {
-        message.innerText = "Please fill out all fields.";
-        return;
-      }
-
-    const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
-
-const shippingEnabled = document.getElementById("shipping_enabled").checked;
-const pickupEnabled = document.getElementById("pickup_enabled").checked;
-let shippingFee = 0;
-if (shippingEnabled) {
-  const shippingFeeRaw = document.getElementById("shipping_fee").value.trim();
-  if (shippingFeeRaw === "") {
-    const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
-    if (!confirmZero) {
-      message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
-      submitBtn.disabled = false;
-      submitBtn.innerText = "✅ Upload Product";
-      return;
-    }
-    shippingFee = 0;
+// [ADD] 图片 URL 预览（你已经有 <img id="preview"> 了，这里把它“连起来”）
+const imageUrlInput = document.getElementById("image_url");
+const previewImg = document.getElementById("preview");
+imageUrlInput.addEventListener("input", () => {
+  const url = imageUrlInput.value.trim();
+  if (url) {
+    previewImg.src = url;
+    previewImg.classList.remove("hidden");
   } else {
-    shippingFee = parseFloat(shippingFeeRaw);
-    if (isNaN(shippingFee)) {
-      message.innerText = "❌ Please enter a valid shipping fee.";
-      submitBtn.disabled = false;
-      submitBtn.innerText = "✅ Upload Product";
-      return;
-    }
+    previewImg.src = "";
+    previewImg.classList.add("hidden");
   }
-}
+});
 
+ let currentUser = null;
 
-      let pickupAddress = null;
-if (pickupEnabled) {
-  const pCountry = form["pickup_country"].value;
-  const pProvince = form["pickup_province"].value;
-  const pCity = form["pickup_city"].value;
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "/login.html";
+  } else {
+    currentUser = user;
+  }
+});
 
-  if (!pCountry || !pProvince || !pCity) {
-    message.innerText = "❌ Please select your pickup address.";
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // 🔵 A 处：先禁用按钮 + 提示上传中
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Uploading...";
+  message.style.color = "#374151";
+  message.innerText = "⏳ Uploading your product...";
+
+  const name = document.getElementById("name").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const price = parseFloat(document.getElementById("price").value);
+  const imageUrl = document.getElementById("image_url").value.trim();
+  const endsAtRaw = document.getElementById("ends_at").value;
+
+  if (!name || !description || !imageUrl || isNaN(price) || !endsAtRaw) {
+    message.style.color = "red";
+    message.innerText = "Please fill out all fields.";
     submitBtn.disabled = false;
     submitBtn.innerText = "✅ Upload Product";
     return;
   }
 
-  pickupAddress = { country: pCountry, province: pProvince, city: pCity };
-}
+  const endsAt = Timestamp.fromDate(new Date(endsAtRaw));
 
+  // 运费/自提选项
+  const shippingEnabled = document.getElementById("shipping_enabled").checked;
+  const pickupEnabled   = document.getElementById("pickup_enabled").checked;
 
-const country = document.getElementById("country").value;
-const province = document.getElementById("province").value;
-const city = document.getElementById("city").value;
+  // 运费校验
+  let shippingFee = 0;
+  if (shippingEnabled) {
+    const shippingFeeRaw = document.getElementById("shipping_fee").value.trim();
+    if (shippingFeeRaw === "") {
+      const confirmZero = confirm("⚠️ You enabled shipping but did not enter a shipping fee. It will default to $0. Do you want to continue?");
+      if (!confirmZero) {
+        message.style.color = "red";
+        message.innerText = "❌ Upload cancelled. Please enter a shipping fee.";
+        submitBtn.disabled = false;
+        submitBtn.innerText = "✅ Upload Product";
+        return;
+      }
+      shippingFee = 0;
+    } else {
+      shippingFee = parseFloat(shippingFeeRaw);
+      if (isNaN(shippingFee)) {
+        message.style.color = "red";
+        message.innerText = "❌ Please enter a valid shipping fee.";
+        submitBtn.disabled = false;
+        submitBtn.innerText = "✅ Upload Product";
+        return;
+      }
+    }
+  }
 
-if (!country || !province || !city) {
-  message.innerText = "❌ Please select your shipping address (country, province, city).";
-  submitBtn.disabled = false;
-  submitBtn.innerText = "✅ Upload Product";
-  return;
-}
-      
-try {
-  await addDoc(collection(db, "products"), {
-    name,
-    price,
-    description,
-    image_url: imageUrl,
-    uploader_uid: currentUser.uid,
-    seller_name: currentUser.email || "Anonymous",
-    starting_bid: price,
-    bids: [],
-    current_bid: price,
-    ends_at: endsAt,
-    shipping_enabled: shippingEnabled,
-    shipping_fee: shippingFee,
-    pickup_enabled: pickupEnabled,
-    pickup_address: pickupAddress,
-    shipping_address: { country, province, city },
-    created_at: serverTimestamp()
-  });
+  // pickup 地址（若启用）
+  let pickupAddress = null;
+  if (pickupEnabled) {
+    const pCountry  = document.getElementById("pickup_country").value;
+    const pProvince = document.getElementById("pickup_province").value;
+    const pCity     = document.getElementById("pickup_city").value;
 
-  form.reset();
-  message.style.color = "green";
-  message.innerText = "✅ Product uploaded successfully! Redirecting...";
-  setTimeout(() => {
-    window.location.href = "/main.html";
-  }, 1200);
+    if (!pCountry || !pProvince || !pCity) {
+      message.style.color = "red";
+      message.innerText = "❌ Please select your pickup address.";
+      submitBtn.disabled = false;
+      submitBtn.innerText = "✅ Upload Product";
+      return;
+    }
+    pickupAddress = { country: pCountry, province: pProvince, city: pCity };
+  }
 
-} catch (err) {
-  console.error("Upload failed:", err);
-  message.style.color = "red";
-  message.innerText = "❌ Upload failed. Try again.";
-  submitBtn.disabled = false;
-  submitBtn.innerText = "✅ Upload Product";
-}
+  // 卖家发货地址（必填）
+  const country  = document.getElementById("country").value;
+  const province = document.getElementById("province").value;
+  const city     = document.getElementById("city").value;
+  if (!country || !province || !city) {
+    message.style.color = "red";
+    message.innerText = "❌ Please select your shipping address (country, province, city).";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "products"), {
+      // 基本信息
+      name,
+      price,
+      description,
+      image_url: imageUrl,
+
+      // 身份字段（shop.js 用到 seller_uid）
+      seller_uid: currentUser.uid,
+      uploader_uid: currentUser.uid, // 兼容旧逻辑
+      seller_name: currentUser.email || "Anonymous",
+
+      // 拍卖字段
+      starting_bid: price,
+      bids: [],
+      current_bid: price,
+      ends_at: endsAt,
+
+      // 物流字段
+      shipping_enabled: shippingEnabled,
+      shipping_fee: shippingFee,
+      pickup_enabled: pickupEnabled,
+      pickup_address: pickupAddress,
+      shipping_address: { country, province, city },
+
+      // 易货默认未锁定
+      barter_locked: false,
+
+      created_at: serverTimestamp()
+    });
+
+    form.reset();
+    message.style.color = "green";
+    message.innerText = "✅ Product uploaded successfully! Redirecting...";
+    setTimeout(() => {
+      window.location.href = "/main.html";
+    }, 1200);
+  } catch (err) {
+    console.error("Upload failed:", err);
+    message.style.color = "red";
+    message.innerText = "❌ Upload failed. Try again.";
+    submitBtn.disabled = false;
+    submitBtn.innerText = "✅ Upload Product";
+  }
 });
+
     
 const shippingCheckbox = document.getElementById("shipping_enabled");
 const pickupCheckbox = document.getElementById("pickup_enabled");
