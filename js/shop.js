@@ -303,6 +303,59 @@ if (currentUser && currentUser.uid === product.seller_uid) {
   dbgBtn.onclick = () => window.debugListBarterRequests(product.id);
   item.appendChild(dbgBtn);
 }
+
+item.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// 仅卖家可见：打印该商品的所有 barter 请求到控制台
+if (currentUser && currentUser.uid === product.seller_uid) {
+  const dbgBtn = document.createElement("button");
+  dbgBtn.textContent = "🧪 Console: Barter Requests";
+  dbgBtn.className = "mt-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800";
+  dbgBtn.onclick = () => window.debugListBarterRequests(product.id);
+  item.appendChild(dbgBtn);
+}
+
+// —— 卖家功能：查看并处理易货请求（按钮 + 弹窗）——
+if (currentUser && currentUser.uid === product.seller_uid) {
+  // 入口按钮
+  const viewBtn = document.createElement("button");
+  viewBtn.textContent = "🗂 View Barter Requests";
+  viewBtn.className = "mt-2 ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700";
+  viewBtn.onclick = () => window.showBarterRequests(product.id, product.name);
+  item.appendChild(viewBtn);
+
+  // 弹窗容器（每个商品一个，id 带上 productId）
+  const sellerModalHTML = `
+    <div id="barter-requests-modal-${product.id}"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000;">
+      <div style="position:absolute; top:10%; left:50%; transform:translateX(-50%);
+                  width:min(900px, 92vw); background:#fff; border-radius:10px; padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h3 style="font-size:18px; font-weight:700;">Barter Requests – ${product.name}</h3>
+          <button onclick="document.getElementById('barter-requests-modal-${product.id}').style.display='none'"
+                  style="padding:4px 10px; border-radius:6px; background:#eee;">Close</button>
+        </div>
+        <div id="barter-requests-body-${product.id}" style="max-height:60vh; overflow:auto; border-top:1px solid #eee; padding-top:8px;">
+          <p style="color:#666; font-size:14px;">Loading…</p>
+        </div>
+      </div>
+    </div>
+  `;
+  item.insertAdjacentHTML('beforeend', sellerModalHTML);
+}
+
+        
+startCountdown(
+  `cd-${product.id}`,
+  endsAt,
+  product.id,
+  product.current_bid || product.starting_bid || 0,
+  product.current_bidder || '',
+  product.bids || []
+);
+loadReviewsForProduct(product.seller_uid, product.id, item);
+
         
 startCountdown(
   `cd-${product.id}`,
