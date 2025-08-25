@@ -723,3 +723,112 @@ window.debugListBarterRequests = async function(productId) {
     alert("Error listing barter requests (see console).");
   }
 };
+
+
+// —— 卖家查看易货请求：打开弹窗并渲染列表 ——
+window.showBarterRequests = async function(productId, productName) {
+  const modal = document.getElementById(`barter-requests-modal-${productId}`);
+  const body  = document.getElementById(`barter-requests-body-${productId}`);
+  if (!modal || !body) return;
+
+  modal.style.display = 'block';
+  body.innerHTML = `<p style="color:#666; font-size:14px;">Loading…</p>`;
+
+  try {
+    const snap = await getDocs(collection(db, "products", productId, "barter_requests"));
+    const rows = [];
+    snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+
+    if (!rows.length) {
+      body.innerHTML = `<p style="color:#666;">No barter requests yet.</p>`;
+      return;
+    }
+
+    const listHtml = rows.map(r => {
+      const msg   = r.offer_message || "(no message)";
+      const extra = (typeof r.extra_cash_offer === 'number') ? r.extra_cash_offer : 0;
+      const when  = r.submitted_at?.toDate ? r.submitted_at.toDate().toLocaleString() : "—";
+      const email = r.user_email || r.user_uid || "—";
+
+      const att = r.attachment?.url
+        ? `<div style="margin-top:4px;">
+             <a href="${r.attachment.url}" target="_blank" rel="noopener"
+                style="color:#2563eb; text-decoration:underline;">Attachment</a>
+             <span style="color:#999; font-size:12px;"> ${r.attachment.file_name || ""}</span>
+           </div>`
+        : "";
+
+      return `
+        <div style="border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+            <div style="flex:1;">
+              <div style="font-size:14px;"><b>From:</b> ${email}</div>
+              <div style="font-size:14px; margin-top:4px;"><b>Offer:</b> ${msg}</div>
+              <div style="font-size:14px; margin-top:4px;"><b>Extra cash:</b> $${extra}</div>
+              <div style="font-size:12px; color:#666; margin-top:4px;">${when}</div>
+              ${att}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; min-width:120px;">
+              <button onclick="window.approveBarterRequest('${productId}', '${r.id}')"
+                      style="background:#16a34a; color:#fff; padding:6px 10px; border-radius:6px;">Accept</button>
+              <button onclick="window.declineBarterRequest('${productId}', '${r.id}')"
+                      style="background:#e11d48; color:#fff; padding:6px 10px; border-radius:6px;">Decline</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    body.innerHTML = listHtml;
+
+  } catch (e) {
+    console.error("Failed to load barter requests:", e);
+    body.innerHTML = `<p style="color:#dc2626;">Failed to load requests. Please try again.</p>`;
+  }
+};
+
+// —— 接受：锁定为易货，并记录选中的请求（落到产品文档上） ——
+window.approveBarterRequest = async function(productId, requestId) {
+  try {
+    const reqRef  = doc(db, "products", productId, "barter_requests", requestId);
+    const reqSnap = await getDoc(reqRef);
+    if (!reqSnap.exists()) {
+      alert("This request no longer exists.");
+      return;
+    }
+    const data = reqSnap.data();
+
+    const prodRef = doc(db, "products", productId);
+    await updateDoc(prodRef, {
+      barter_locked: true,
+      barter_selected_request: {
+        request_id: requestId,
+        ...data,
+        decided_at: new Date(),
+        decided_by: currentUser?.uid || null
+      }
+    });
+
+    alert("✅ Accepted. The item is now locked for barter.");
+    const modal = document.getElementById(`barter-requests-modal-${productId}`);
+    if (modal) modal.style.display = 'none';
+    location.reload();
+  } catch (e) {
+    console.error("Approve failed:", e);
+    alert("Failed to accept. See console for details.");
+  }
+};
+
+// —— 拒绝：默认“软拒绝”（不删文档），需要真删除就取消注释 deleteDoc ——
+window.declineBarterRequest = async function(productId, requestId) {
+  try {
+    // 真删除：取消下一行注释
+    // await deleteDoc(doc(db, "products", productId, "barter_requests", requestId));
+    alert("❎ Declined (no changes to the product).");
+    // 如启用删除，可刷新列表：
+    // window.showBarterRequests(productId);
+  } catch (e) {
+    console.error("Decline failed:", e);
+    alert("Failed to decline. See console for details.");
+  }
+};
