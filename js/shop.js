@@ -346,17 +346,6 @@ startCountdown(
 loadReviewsForProduct(product.seller_uid, product.id, item);
 
         
-startCountdown(
-  `cd-${product.id}`,
-  endsAt,
-  product.id,
-  product.current_bid || product.starting_bid || 0,
-  product.current_bidder || '',
-  product.bids || []
-);
-loadReviewsForProduct(product.seller_uid, product.id, item);
-
-        
         if (currentUser) {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
   const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
