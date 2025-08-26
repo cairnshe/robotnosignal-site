@@ -271,7 +271,7 @@ barterBtn.onclick = () => {
 item.appendChild(barterBtn);
 
   
-// === NEW: Barter / Chat 按钮（点击打开即时聊天） ===
+ // === NEW: Barter / Chat 按钮（点击打开即时聊天） ===
 const chatBtn = document.createElement("button");
 chatBtn.textContent = "💬 Barter / Chat";
 chatBtn.className = "mt-2 ml-2 px-3 py-1 bg-black text-white rounded hover:bg-gray-800";
@@ -285,7 +285,7 @@ chatBtn.onclick = () => {
 };
 item.appendChild(chatBtn);
 // === NEW END ===
-
+ 
   
 // Modal HTML
 const modalHTML = `
