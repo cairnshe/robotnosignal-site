@@ -270,6 +270,23 @@ barterBtn.onclick = () => {
 };
 item.appendChild(barterBtn);
 
+  
+// === NEW: Barter / Chat 按钮（点击打开即时聊天） ===
+const chatBtn = document.createElement("button");
+chatBtn.textContent = "💬 Barter / Chat";
+chatBtn.className = "mt-2 ml-2 px-3 py-1 bg-black text-white rounded hover:bg-gray-800";
+chatBtn.onclick = () => {
+  if (window.BarterChat?.openForProduct) {
+    window.BarterChat.openForProduct(product.id);
+  } else {
+    console.warn("Chat module not loaded. Ensure /js/barter-chat.js is included after shop.js.");
+    alert("Chat module not loaded.");
+  }
+};
+item.appendChild(chatBtn);
+// === NEW END ===
+
+  
 // Modal HTML
 const modalHTML = `
   <div id="barter-modal-${product.id}" class="barter-modal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
