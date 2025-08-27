@@ -1,5 +1,5 @@
 // /js/barter-chat.js
-// Chat for buyer ↔ seller about a product (barter-friendly)
+// Buyer ↔ Seller chat for a product (barter-friendly), with file attachments
 
 import { db, auth } from "/js/firebase-config.js";
 import {
@@ -16,23 +16,30 @@ import {
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import {
+  getStorage,
+  ref as sRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/** ---------- DOM refs (shop.html 已经提供) ---------- */
-const modal = document.getElementById("barterChatModal");
-const titleEl = document.getElementById("barterChatTitle");
-const infoEl = document.getElementById("barterChatProductInfo");
-const listEl = document.getElementById("barterChatMessages");
+/** ---------- DOM refs (必须在页面里有这些 id) ---------- */
+const modal      = document.getElementById("barterChatModal");
+const titleEl    = document.getElementById("barterChatTitle");
+const infoEl     = document.getElementById("barterChatProductInfo");
+const listEl     = document.getElementById("barterChatMessages");
 const offerInput = document.getElementById("barterOfferInput");
-const textInput = document.getElementById("barterTextInput");
-const hintEl = document.getElementById("barterChatHint");
-const sendBtn = document.getElementById("barterSendBtn");
-const closeBtn = document.getElementById("barterChatClose");
+const textInput  = document.getElementById("barterTextInput");
+const fileInput  = document.getElementById("barterFileInput"); // ✅ 附件输入
+const hintEl     = document.getElementById("barterChatHint");
+const sendBtn    = document.getElementById("barterSendBtn");
+const closeBtn   = document.getElementById("barterChatClose");
 
 /** ---------- runtime state ---------- */
-let currentUser = null;
-let currentThread = null;       // { id, product_id, buyer_uid, seller_uid, ... }
-let messagesUnsub = null;       // snapshot unsubscribing function
-let currentProduct = null;      // { id, name, image_url, seller_uid, seller_name, ... }
+let currentUser     = null;
+let currentThread   = null; // { id, product_id, buyer_uid, seller_uid, ... }
+let messagesUnsub   = null; // snapshot unsubscribe
+let currentProduct  = null; // { id, name, image_url, seller_uid, ... }
 
 /** ---------- utils ---------- */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -45,19 +52,18 @@ function ensureLoggedIn() {
   }
   return true;
 }
-
 function fmtMoneyFromCents(cents) {
   if (typeof cents !== "number" || Number.isNaN(cents)) return "";
   return `$${(cents / 100).toFixed(2)}`;
 }
-
 function scrollToBottom() {
-  // 等下一帧等 DOM 插完
   requestAnimationFrame(() => {
     listEl.scrollTop = listEl.scrollHeight;
   });
 }
+function clearList() { listEl.innerHTML = ""; }
 
+/** 渲染消息气泡（含附件预览/链接） */
 function renderMessageRow(msg, isSelf) {
   const wrap = document.createElement("div");
   wrap.style.display = "flex";
@@ -77,14 +83,40 @@ function renderMessageRow(msg, isSelf) {
   bubble.style.border = isSelf ? "none" : "1px solid #eee";
   bubble.style.boxShadow = isSelf ? "none" : "0 2px 8px rgba(0,0,0,.04)";
 
-  const parts = [];
+  const lines = [];
   if (typeof msg.extra_cents === "number" && msg.extra_cents > 0) {
-    parts.push(`💰 Extra: ${fmtMoneyFromCents(msg.extra_cents)}`);
+    lines.push(`💰 Extra: ${fmtMoneyFromCents(msg.extra_cents)}`);
   }
-  if (msg.text && msg.text.trim()) {
-    parts.push(msg.text.trim());
+  if (msg.text && msg.text.trim()) lines.push(msg.text.trim());
+  bubble.textContent = lines.join("\n");
+
+  if (msg.attachment?.url) {
+    const attWrap = document.createElement("div");
+    attWrap.style.marginTop = "6px";
+
+    const mime = msg.attachment.mime_type || "";
+    if (mime.startsWith("image/")) {
+      const img = document.createElement("img");
+      img.src = msg.attachment.url;
+      img.alt = msg.attachment.name || "image";
+      img.style.maxWidth = "100%";
+      img.style.borderRadius = "8px";
+      img.style.display = "block";
+      attWrap.appendChild(img);
+    }
+    const a = document.createElement("a");
+    a.href = msg.attachment.url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = msg.attachment.name || "Attachment";
+    a.style.display = "inline-block";
+    a.style.marginTop = "4px";
+    a.style.textDecoration = "underline";
+    a.style.color = isSelf ? "#fff" : "#2563eb";
+    attWrap.appendChild(a);
+
+    bubble.appendChild(attWrap);
   }
-  bubble.textContent = parts.length ? parts.join("\n") : "(empty)";
 
   const meta = document.createElement("div");
   meta.style.fontSize = "11px";
@@ -101,39 +133,22 @@ function renderMessageRow(msg, isSelf) {
   return wrap;
 }
 
-function clearList() {
-  listEl.innerHTML = "";
-}
-
 /** ---------- Firestore helpers ---------- */
-
-/**
- * 根据 product 和当前用户，生成稳定的 threadId：
- * 规则：{productId}_{buyerUid}_{sellerUid}（buyer/seller 顺序固定）
- */
 function computeThreadId(productId, buyerUid, sellerUid) {
   return `${productId}_${buyerUid}_${sellerUid}`;
 }
 
-/**
- * 确保线程存在；若没有则创建。
- * 返回 thread 文档对象（含 id）。
- *
- * Firestore 规则里你已经写了：
- * - 线程创建需要字段：product_id / buyer_uid / seller_uid
- * - 只有参与者（buyer 或 seller）才能创建/读写
- */
+/** 确保线程存在；若没有则创建 */
 async function ensureThread(product) {
   const productId = product.id;
   const sellerUid = product.seller_uid;
-  const buyerUid = currentUser.uid;
+  const buyerUid  = currentUser.uid;
 
-  const threadId = computeThreadId(productId, buyerUid, sellerUid);
+  const threadId  = computeThreadId(productId, buyerUid, sellerUid);
   const threadRef = doc(db, "barter_threads", threadId);
-  const snap = await getDoc(threadRef);
+  const snap      = await getDoc(threadRef);
 
   if (!snap.exists()) {
-    // 创建
     const base = {
       product_id: productId,
       product_name: product.name || "",
@@ -147,24 +162,18 @@ async function ensureThread(product) {
       last_message: "",
       last_sender_uid: "",
       last_extra_cents: 0,
+      last_message_at: serverTimestamp(),
       participants: [buyerUid, sellerUid],
-      // 你 rules 里 validThreadCreate() 仅要求上面三项和参与者校验，这里都满足
     };
     await setDoc(threadRef, base);
     return { id: threadId, ...base };
   }
-
   return { id: threadId, ...snap.data() };
 }
 
-/**
- * 订阅消息子集合
- */
+/** 订阅消息 */
 function subscribeMessages(thread) {
-  if (messagesUnsub) {
-    messagesUnsub();
-    messagesUnsub = null;
-  }
+  if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
 
   const q = query(
     collection(db, "barter_threads", thread.id, "messages"),
@@ -189,11 +198,28 @@ function subscribeMessages(thread) {
   );
 }
 
-/**
- * 发送一条消息
- */
+/** 发送消息（含可选附件上传） */
 async function sendMessage(text, extraCents) {
   if (!currentThread || !currentUser) return;
+
+  // 附件（可选）
+  let attachment = null;
+  const file = fileInput?.files?.[0] || null;
+  if (file) {
+    const MAX = 25 * 1024 * 1024;
+    if (file.size > MAX) throw new Error("File too large (>25MB)");
+    const storage = getStorage();
+    const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
+    const ref  = sRef(storage, path);
+    await uploadBytes(ref, file);
+    const url = await getDownloadURL(ref);
+    attachment = {
+      url,
+      name: file.name,
+      mime_type: file.type || "application/octet-stream",
+      size: file.size
+    };
+  }
 
   const payload = {
     text: (text || "").trim(),
@@ -201,91 +227,74 @@ async function sendMessage(text, extraCents) {
     sender_uid: currentUser.uid,
     sender_email: currentUser.email || "",
     created_at: serverTimestamp(),
+    attachment: attachment || null
   };
 
   const msgsCol = collection(db, "barter_threads", currentThread.id, "messages");
   await addDoc(msgsCol, payload);
 
-  // 更新 thread 概要
   await updateDoc(doc(db, "barter_threads", currentThread.id), {
     updated_at: serverTimestamp(),
-    last_message: payload.text || (payload.extra_cents > 0 ? `Extra ${fmtMoneyFromCents(payload.extra_cents)}` : ""),
+    last_message: payload.text
+      || (payload.extra_cents > 0 ? `Extra ${fmtMoneyFromCents(payload.extra_cents)}`
+      : (attachment ? `[Attachment] ${attachment.name}` : "")),
     last_sender_uid: payload.sender_uid,
     last_extra_cents: payload.extra_cents || 0,
+    last_message_at: serverTimestamp()
   });
+
+  // 清空文件输入
+  if (fileInput) fileInput.value = "";
 }
 
 /** ---------- UI open/close ---------- */
-
 function openModal() {
   modal.classList.remove("hidden");
-  modal.classList.add("flex"); // 你的 CSS 已经提供 .flex {display:flex}
-  // 给一点动画延迟体验更好（可选）
-  requestAnimationFrame(() => scrollToBottom());
+  modal.classList.add("flex"); // 需要 .flex { display:flex }
+  requestAnimationFrame(scrollToBottom);
 }
-
 function closeModal() {
   modal.classList.add("hidden");
   modal.classList.remove("flex");
-  if (messagesUnsub) {
-    messagesUnsub();
-    messagesUnsub = null;
-  }
-  currentThread = null;
+  if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
+  currentThread  = null;
   currentProduct = null;
-  textInput.value = "";
+  textInput.value  = "";
   offerInput.value = "";
   hintEl.textContent = "";
+  if (fileInput) fileInput.value = "";
 }
 
-/** ---------- Main entry exposed to window ---------- */
-
-/**
- * openForProduct(productOrId[, options])
- * - productOrId: 传入完整 product 对象（推荐）；或 productId（此时会自动读取 /products/{id}）
- * - options: { buyerUid?: string } 预留给卖家想指定某个 buyer 时候的场景（此版暂不使用）
- */
-async function openForProduct(productOrId, options = {}) {
+/** ---------- public API ---------- */
+/** 在商品页/列表中打开聊天（传 product 对象或 productId） */
+async function openForProduct(productOrId) {
   try {
     if (!ensureLoggedIn()) return;
 
-    // 1) 获取 product
+    // 1) 读 product
     let product = null;
     if (typeof productOrId === "string") {
       const pRef = doc(db, "products", productOrId);
       const pSnap = await getDoc(pRef);
-      if (!pSnap.exists()) {
-        alert("Product not found.");
-        return;
-      }
+      if (!pSnap.exists()) { alert("Product not found."); return; }
       product = { id: pSnap.id, ...pSnap.data() };
     } else if (productOrId && typeof productOrId === "object") {
       product = productOrId;
-    } else {
-      alert("Invalid product.");
-      return;
-    }
+    } else { alert("Invalid product."); return; }
 
     currentProduct = product;
-
-    // 2) 校验参与者（买家 / 卖家皆可打开）
     const sellerUid = product.seller_uid;
-    if (!sellerUid) {
-      alert("Seller not found on this product.");
-      return;
-    }
+    if (!sellerUid) { alert("Seller not found on this product."); return; }
 
-    // 3) 确保 thread 存在
+    // 2) 确保 thread
     currentThread = await ensureThread(product);
 
-    // 4) 准备 UI
+    // 3) UI
     titleEl.textContent = "Barter Chat";
     infoEl.textContent = `Product: ${product.name || "(no name)"} • Seller: ${product.seller_name || product.seller_email || product.seller_uid || ""}`;
-    hintEl.textContent = currentUser.uid === sellerUid
-      ? "You are chatting as the seller."
-      : "You are chatting as the buyer.";
+    hintEl.textContent = currentUser.uid === sellerUid ? "You are chatting as the seller." : "You are chatting as the buyer.";
 
-    // 5) 订阅消息 & 打开
+    // 4) 订阅并打开
     subscribeMessages(currentThread);
     openModal();
   } catch (err) {
@@ -294,9 +303,45 @@ async function openForProduct(productOrId, options = {}) {
   }
 }
 
-/** ---------- events ---------- */
+/** 通过 threadId 打开（给 /my-chats 用） */
+async function openByThreadId(threadId) {
+  try {
+    if (!ensureLoggedIn()) return;
 
-// 发送按钮
+    const tRef = doc(db, "barter_threads", threadId);
+    const tSnap = await getDoc(tRef);
+    if (!tSnap.exists()) { alert("Thread not found."); return; }
+    const t = { id: tSnap.id, ...tSnap.data() };
+
+    // 权限：仅参与者可看（rules 里也会拦）
+    if (![t.buyer_uid, t.seller_uid].includes(currentUser.uid)) {
+      alert("You are not a participant of this thread.");
+      return;
+    }
+
+    currentThread = t;
+
+    // 尝试显示更完整的产品文案
+    let name = t.product_name || "";
+    if (!name && t.product_id) {
+      const pSnap = await getDoc(doc(db, "products", t.product_id));
+      if (pSnap.exists()) name = pSnap.data().name || "";
+    }
+
+    const who = currentUser.uid === t.seller_uid ? (t.buyer_email || t.buyer_uid) : (t.seller_email || t.seller_uid);
+    titleEl.textContent = "Barter Chat";
+    infoEl.textContent = `Product: ${name || "(no name)"} • With: ${who || ""}`;
+    hintEl.textContent = currentUser.uid === t.seller_uid ? "You are chatting as the seller." : "You are chatting as the buyer.";
+
+    subscribeMessages(currentThread);
+    openModal();
+  } catch (e) {
+    console.error("openByThreadId error:", e);
+    alert(e?.message || "Failed to open chat.");
+  }
+}
+
+/** ---------- events ---------- */
 sendBtn?.addEventListener("click", async () => {
   if (!currentThread) return;
 
@@ -304,8 +349,8 @@ sendBtn?.addEventListener("click", async () => {
   const extraRaw = (offerInput.value || "").trim();
   const extraCents = extraRaw ? parseInt(extraRaw, 10) : 0;
 
-  if (!text && (!extraCents || Number.isNaN(extraCents))) {
-    alert("请输入消息，或者填写额外补多少钱（单位：分）");
+  if (!text && (!extraCents || Number.isNaN(extraCents)) && !(fileInput?.files?.length)) {
+    alert("Type a message, or fill extra cents, or attach a file.");
     return;
   }
 
@@ -313,8 +358,6 @@ sendBtn?.addEventListener("click", async () => {
     sendBtn.disabled = true;
     await sendMessage(text, Number.isNaN(extraCents) ? 0 : extraCents);
     textInput.value = "";
-    // 可选：不清空价钱，方便连续报价；如需清空，取消下一行注释
-    // offerInput.value = "";
     await sleep(50);
     scrollToBottom();
   } catch (e) {
@@ -325,16 +368,19 @@ sendBtn?.addEventListener("click", async () => {
   }
 });
 
-// 关闭按钮 / 点击遮罩（只给 closeBtn，避免误触背景导致输入丢失）
+textInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    sendBtn.click();
+  }
+});
+
 closeBtn?.addEventListener("click", closeModal);
 
 /** ---------- auth bootstrap ---------- */
-onAuthStateChanged(auth, (u) => {
-  currentUser = u || null;
-});
+onAuthStateChanged(auth, (u) => { currentUser = u || null; });
 
-/** ---------- export to window ---------- */
+/** ---------- export ---------- */
 window.BarterChat = {
   openForProduct,
-  // 预留给后续：openByThreadId(threadId) / openSellerWith(buyerUid) 等
+  openByThreadId,
 };
