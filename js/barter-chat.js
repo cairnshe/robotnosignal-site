@@ -9,7 +9,6 @@ import {
   addDoc,
   collection,
   query,
-  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
@@ -23,14 +22,14 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/** ---------- DOM refs (必须在页面里有这些 id) ---------- */
+/** ---------- DOM refs ---------- */
 const modal      = document.getElementById("barterChatModal");
 const titleEl    = document.getElementById("barterChatTitle");
 const infoEl     = document.getElementById("barterChatProductInfo");
 const listEl     = document.getElementById("barterChatMessages");
-const offerInput = document.getElementById("barterOfferInput");
+const offerInput = document.getElementById("barterOfferInput"); // text + inputmode=decimal
 const textInput  = document.getElementById("barterTextInput");
-const fileInput  = document.getElementById("barterFileInput"); // ✅ 附件输入
+const fileInput  = document.getElementById("barterFileInput");
 const hintEl     = document.getElementById("barterChatHint");
 const sendBtn    = document.getElementById("barterSendBtn");
 const closeBtn   = document.getElementById("barterChatClose");
@@ -57,13 +56,40 @@ function fmtMoneyFromCents(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 function scrollToBottom() {
-  requestAnimationFrame(() => {
-    listEl.scrollTop = listEl.scrollHeight;
-  });
+  requestAnimationFrame(() => { listEl.scrollTop = listEl.scrollHeight; });
 }
 function clearList() { listEl.innerHTML = ""; }
 
-/** 渲染消息气泡（含附件预览/链接） */
+/** 把“5”、“5.25”、“$5,25”、“CAD 5.2”等解析为整数 cents */
+function parseOfferToCents(input) {
+  if (!input) return 0;
+  let s = String(input).trim();
+
+  // 去货币符号与空格
+  s = s.replace(/[^\d.,-]/g, "");
+
+  // 如果同时含有逗号与点：约定逗号为千分位，点为小数点（北美格式）
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/,/g, "");
+  } else if (s.includes(",") && !s.includes(".")) {
+    // 只有逗号时，按欧陆风格把逗号当小数点
+    s = s.replace(",", ".");
+  }
+
+  // 只保留 [-]?[0-9]+(.[0-9]{0,})?
+  const m = s.match(/-?\d+(\.\d+)?/);
+  if (!m) return 0;
+
+  const val = parseFloat(m[0]);
+  if (Number.isNaN(val)) return 0;
+
+  // 仅允许非负
+  const dollars = Math.max(0, val);
+  // 转 cents（四舍五入到两位）
+  return Math.round(dollars * 100);
+}
+
+/** 渲染消息（兼容 offer_extra_cents/extra_cents） */
 function renderMessageRow(msg, isSelf) {
   const wrap = document.createElement("div");
   wrap.style.display = "flex";
@@ -84,8 +110,12 @@ function renderMessageRow(msg, isSelf) {
   bubble.style.boxShadow = isSelf ? "none" : "0 2px 8px rgba(0,0,0,.04)";
 
   const lines = [];
-  if (typeof msg.extra_cents === "number" && msg.extra_cents > 0) {
-    lines.push(`💰 Extra: ${fmtMoneyFromCents(msg.extra_cents)}`);
+  const cents = typeof msg.offer_extra_cents === "number"
+    ? msg.offer_extra_cents
+    : (typeof msg.extra_cents === "number" ? msg.extra_cents : 0);
+
+  if (cents > 0) {
+    lines.push(`💰 Extra: ${fmtMoneyFromCents(cents)}`);
   }
   if (msg.text && msg.text.trim()) lines.push(msg.text.trim());
   bubble.textContent = lines.join("\n");
@@ -199,58 +229,79 @@ function subscribeMessages(thread) {
 }
 
 /** 发送消息（含可选附件上传） */
-async function sendMessage(text, extraCents) {
+async function sendMessage(text, offerCents) {
   if (!currentThread || !currentUser) return;
 
-  // 附件（可选）
-  let attachment = null;
-  const file = fileInput?.files?.[0] || null;
-  if (file) {
-    const MAX = 25 * 1024 * 1024;
-    if (file.size > MAX) throw new Error("File too large (>25MB)");
-    const storage = getStorage();
-    const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
-    const ref  = sRef(storage, path);
-    await uploadBytes(ref, file);
-    const url = await getDownloadURL(ref);
-    attachment = {
-      url,
-      name: file.name,
-      mime_type: file.type || "application/octet-stream",
-      size: file.size
+  hintEl.textContent = "Sending…";
+  sendBtn.disabled = true;
+  sendBtn.dataset.loading = "1";
+
+  try {
+    // 附件（可选）
+    let attachment = null;
+    const file = fileInput?.files?.[0] || null;
+    if (file) {
+      hintEl.textContent = "Uploading attachment…";
+      const MAX = 25 * 1024 * 1024;
+      if (file.size > MAX) throw new Error("File too large (>25MB).");
+      const storage = getStorage();
+      const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
+      const ref  = sRef(storage, path);
+      await uploadBytes(ref, file);
+      const url = await getDownloadURL(ref);
+      attachment = {
+        url,
+        name: file.name,
+        mime_type: file.type || "application/octet-stream",
+        size: file.size
+      };
+    }
+
+    const payload = {
+      text: (text || "").trim(),
+      offer_extra_cents: typeof offerCents === "number" ? offerCents : 0, // ← 与规则对齐
+      sender_uid: currentUser.uid,
+      sender_email: currentUser.email || "",
+      created_at: serverTimestamp(),
+      attachment: attachment || null
     };
+
+    const msgsCol = collection(db, "barter_threads", currentThread.id, "messages");
+    await addDoc(msgsCol, payload);
+
+    await updateDoc(doc(db, "barter_threads", currentThread.id), {
+      updated_at: serverTimestamp(),
+      last_message: payload.text
+        || (payload.offer_extra_cents > 0 ? `Extra ${fmtMoneyFromCents(payload.offer_extra_cents)}`
+        : (attachment ? `[Attachment] ${attachment.name}` : "")),
+      last_sender_uid: payload.sender_uid,
+      last_extra_cents: payload.offer_extra_cents || 0,
+      last_message_at: serverTimestamp()
+    });
+
+    // 清空输入
+    if (fileInput) fileInput.value = "";
+    hintEl.textContent = "Sent.";
+    setTimeout(() => { hintEl.textContent = ""; }, 1200);
+  } catch (err) {
+    console.error("send error:", err);
+    // Storage 常见错误提示
+    if (String(err?.message || "").includes("retry-limit")) {
+      alert("Firebase Storage: Retry limit exceeded. Please try again in a moment.");
+    } else {
+      alert(err?.message || "Failed to send message.");
+    }
+    hintEl.textContent = "Failed to send.";
+  } finally {
+    sendBtn.disabled = false;
+    delete sendBtn.dataset.loading;
   }
-
-  const payload = {
-    text: (text || "").trim(),
-    extra_cents: typeof extraCents === "number" ? extraCents : 0,
-    sender_uid: currentUser.uid,
-    sender_email: currentUser.email || "",
-    created_at: serverTimestamp(),
-    attachment: attachment || null
-  };
-
-  const msgsCol = collection(db, "barter_threads", currentThread.id, "messages");
-  await addDoc(msgsCol, payload);
-
-  await updateDoc(doc(db, "barter_threads", currentThread.id), {
-    updated_at: serverTimestamp(),
-    last_message: payload.text
-      || (payload.extra_cents > 0 ? `Extra ${fmtMoneyFromCents(payload.extra_cents)}`
-      : (attachment ? `[Attachment] ${attachment.name}` : "")),
-    last_sender_uid: payload.sender_uid,
-    last_extra_cents: payload.extra_cents || 0,
-    last_message_at: serverTimestamp()
-  });
-
-  // 清空文件输入
-  if (fileInput) fileInput.value = "";
 }
 
 /** ---------- UI open/close ---------- */
 function openModal() {
   modal.classList.remove("hidden");
-  modal.classList.add("flex"); // 需要 .flex { display:flex }
+  modal.classList.add("flex");
   requestAnimationFrame(scrollToBottom);
 }
 function closeModal() {
@@ -266,7 +317,6 @@ function closeModal() {
 }
 
 /** ---------- public API ---------- */
-/** 在商品页/列表中打开聊天（传 product 对象或 productId） */
 async function openForProduct(productOrId) {
   try {
     if (!ensureLoggedIn()) return;
@@ -303,7 +353,6 @@ async function openForProduct(productOrId) {
   }
 }
 
-/** 通过 threadId 打开（给 /my-chats 用） */
 async function openByThreadId(threadId) {
   try {
     if (!ensureLoggedIn()) return;
@@ -313,7 +362,6 @@ async function openByThreadId(threadId) {
     if (!tSnap.exists()) { alert("Thread not found."); return; }
     const t = { id: tSnap.id, ...tSnap.data() };
 
-    // 权限：仅参与者可看（rules 里也会拦）
     if (![t.buyer_uid, t.seller_uid].includes(currentUser.uid)) {
       alert("You are not a participant of this thread.");
       return;
@@ -321,7 +369,6 @@ async function openByThreadId(threadId) {
 
     currentThread = t;
 
-    // 尝试显示更完整的产品文案
     let name = t.product_name || "";
     if (!name && t.product_id) {
       const pSnap = await getDoc(doc(db, "products", t.product_id));
@@ -344,28 +391,24 @@ async function openByThreadId(threadId) {
 /** ---------- events ---------- */
 sendBtn?.addEventListener("click", async () => {
   if (!currentThread) return;
+  if (sendBtn.dataset.loading === "1") return; // 防抖
 
   const text = (textInput.value || "").trim();
   const extraRaw = (offerInput.value || "").trim();
-  const extraCents = extraRaw ? parseInt(extraRaw, 10) : 0;
+  const offerCents = parseOfferToCents(extraRaw); // 统一转 cents
+  const hasFile = Boolean(fileInput?.files?.length);
 
-  if (!text && (!extraCents || Number.isNaN(extraCents)) && !(fileInput?.files?.length)) {
-    alert("Type a message, or fill extra cents, or attach a file.");
+  if (!text && offerCents <= 0 && !hasFile) {
+    alert("Type a message, or enter an extra amount, or attach a file.");
     return;
   }
 
-  try {
-    sendBtn.disabled = true;
-    await sendMessage(text, Number.isNaN(extraCents) ? 0 : extraCents);
-    textInput.value = "";
-    await sleep(50);
-    scrollToBottom();
-  } catch (e) {
-    console.error("send error:", e);
-    alert(e?.message || "Failed to send message.");
-  } finally {
-    sendBtn.disabled = false;
-  }
+  await sendMessage(text, offerCents);
+  textInput.value = "";
+  // 是否清空金额由你决定；这里保留输入，便于连续报价
+  // offerInput.value = "";
+  await sleep(50);
+  scrollToBottom();
 });
 
 textInput?.addEventListener("keydown", (e) => {
