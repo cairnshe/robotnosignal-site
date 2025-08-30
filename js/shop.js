@@ -246,6 +246,23 @@ function renderProducts(filtered) {
 
     list.appendChild(item);
 
+// 💬 买家都能看到聊天按钮（不管 locked 与否）
+const isSeller = currentUser && currentUser.uid === product.seller_uid;
+if (!isSeller) {
+  const chatBtn = document.createElement("button");
+  chatBtn.textContent = "💬 Barter / Chat";
+  chatBtn.className = "mt-2 px-3 py-1 bg-black text-white rounded hover:bg-gray-800";
+  chatBtn.onclick = () => {
+    if (window.BarterChat?.openForProduct) {
+      window.BarterChat.openForProduct(product); // 传完整 product 对象
+    } else {
+      console.warn("Chat module not loaded. Ensure /js/barter-chat.js is included.");
+      alert("Chat module not loaded.");
+    }
+  };
+  item.appendChild(chatBtn);
+}
+    
     // 🔒 Barter 锁定时禁用出价 + 按钮
     if (product.barter_locked === true) {
       const bidInput = item.querySelector(`#input-${product.id}`);
