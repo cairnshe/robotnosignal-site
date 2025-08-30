@@ -158,7 +158,7 @@ onAuthStateChanged(auth, async (user) => {
     loadProducts();
    } else {
     console.warn("⚠️ User not logged in.");
-    const list = document.getElementById('product-list');
+
     list.innerHTML = `
   <div style="text-align: center; margin-top: 3rem;">
     <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
