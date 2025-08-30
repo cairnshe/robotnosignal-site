@@ -165,7 +165,8 @@ function renderMessageRow(msg, isSelf) {
 
 /** ---------- Firestore helpers ---------- */
 function computeThreadId(productId, buyerUid, sellerUid) {
-  return `${productId}_${buyerUid}_${sellerUid}`;
+  const pair = [buyerUid, sellerUid].sort().join('_');
+  return `${productId}_${pair}`;
 }
 
 /** 确保线程存在；若没有则创建 */
