@@ -157,21 +157,21 @@ onAuthStateChanged(auth, async (user) => {
     // ✅ 只有登录后才加载产品
     loadProducts();
    } else {
-    console.warn("⚠️ User not logged in.");
-
-    list.innerHTML = `
-  <div style="text-align: center; margin-top: 3rem;">
-    <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
-    <p style="margin-top: 1.5rem; font-size: 1.1rem;">
-      Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
-    </p>
-    <p style="margin-top: 0.5rem; font-size: 1.1rem;">
-      Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
-    </p>
-  </div>
-`;
-
-} 
+   } else {
+  console.warn("⚠️ User not logged in.");
+  // 这里不要再 const list 了，直接用顶部那个
+  list.innerHTML = `
+    <div style="text-align: center; margin-top: 3rem;">
+      <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
+      <p style="margin-top: 1.5rem; font-size: 1.1rem;">
+        Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 1.1rem;">
+        Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
+      </p>
+    </div>
+  `;
+}
 
 }); 
 
