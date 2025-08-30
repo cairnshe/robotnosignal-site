@@ -175,6 +175,12 @@ async function ensureThread(product) {
   const sellerUid = product.seller_uid;
   const buyerUid  = currentUser.uid;
 
+ // 🚨 新增的检查（就在这里）
+  if (currentUser.uid === sellerUid) {
+    // 卖家不应该自己发起新线程
+    throw new Error("As the seller, please use 'View Barter Requests' to chat with buyers.");
+  }
+  
   const threadId  = computeThreadId(productId, buyerUid, sellerUid);
   const threadRef = doc(db, "barter_threads", threadId);
   const snap      = await getDoc(threadRef);
