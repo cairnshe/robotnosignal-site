@@ -262,55 +262,19 @@ if (product.barter_locked === true) {
   lockNotice.className = "text-sm text-red-600 font-medium mt-2";
   item.appendChild(lockNotice);
 
-  const barterBtn = document.createElement("button");
+const barterBtn = document.createElement("button");
 barterBtn.textContent = "💬 Request Barter";
 barterBtn.className = "mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700";
 barterBtn.onclick = () => {
-  document.getElementById(`barter-modal-${product.id}`).style.display = 'block';
-};
-item.appendChild(barterBtn);
-
-  
- // === NEW: Barter / Chat 按钮（点击打开即时聊天） ===
-const chatBtn = document.createElement("button");
-chatBtn.textContent = "💬 Barter / Chat";
-chatBtn.className = "mt-2 ml-2 px-3 py-1 bg-black text-white rounded hover:bg-gray-800";
-chatBtn.onclick = () => {
   if (window.BarterChat?.openForProduct) {
-    window.BarterChat.openForProduct(product.id);
+    window.BarterChat.openForProduct(product); // ← 用完整 product 对象
   } else {
     console.warn("Chat module not loaded. Ensure /js/barter-chat.js is included after shop.js.");
     alert("Chat module not loaded.");
   }
 };
-item.appendChild(chatBtn);
-// === NEW END ===
+item.appendChild(barterBtn);
  
-  
-// Modal HTML
-const modalHTML = `
-  <div id="barter-modal-${product.id}" class="barter-modal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
-    background:white; padding:1rem; border:1px solid #ccc; border-radius:8px; z-index:1000; max-width:90%;">
-    <h3 class="text-lg font-semibold mb-2">Barter Request for "${product.name}"</h3>
-
-    <label for="barter-message-${product.id}" class="block font-medium mb-1">Offer Description</label>
-    <textarea id="barter-message-${product.id}" rows="4" class="w-full border p-2 rounded mb-4" placeholder="Describe what you want to offer for exchange..."></textarea>
-
-    <label for="barter-extra-${product.id}" class="block font-medium mb-1">💰 How much extra would you pay? (optional)</label>
-    <input type="number" id="barter-extra-${product.id}" step="0.01" min="0" class="w-full border p-2 rounded mb-4" placeholder="e.g. 5.00">
-
-    <label for="barter-file-${product.id}" class="block font-medium mb-1">📎 Attach a file (optional)</label>
-    <input type="file" id="barter-file-${product.id}" class="w-full border p-2 rounded mb-4" accept="image/*,audio/*,video/*,application/pdf">
-
-    <div class="flex justify-end space-x-2 mt-3">
-      <button onclick="submitBarterRequest('${product.id}')" class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700">Submit</button>
-      <button onclick="document.getElementById('barter-modal-${product.id}').style.display='none'" class="bg-gray-300 px-4 py-1 rounded hover:bg-gray-400">Cancel</button>
-    </div>
-  </div>
-`;
-
-item.insertAdjacentHTML('beforeend', modalHTML);
-}
 
 // 仅卖家可见：打印该商品的所有 barter 请求到控制台
 if (currentUser && currentUser.uid === product.seller_uid) {
