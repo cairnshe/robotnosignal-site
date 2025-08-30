@@ -245,7 +245,9 @@ async function sendMessage(text, offerCents) {
       const MAX = 25 * 1024 * 1024;
       if (file.size > MAX) throw new Error("File too large (>25MB).");
       
- const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
+const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${safeName}`;
+
  const ref  = sRef(storage, path); // ✅ 使用 firebase-config.js 里导出的 storage
 
       await uploadBytes(ref, file, { contentType: file.type || "application/octet-stream" });
