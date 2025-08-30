@@ -327,71 +327,75 @@ startCountdown(
 loadReviewsForProduct(product.seller_uid, product.id, item);
 
         
-        if (currentUser) {
+ // ✅ 收藏状态（这段代码放在 renderProducts 的 filtered.forEach(product) {...} 里面）
+if (currentUser) {
   const favBtn = document.getElementById(`fav-btn-${product.id}`);
   const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
-  getDoc(favRef).then((favSnap) => {
-    
-    if (favSnap.exists()) {
-  favBtn.setAttribute("data-fav", "true");
-  favBtn.textContent = "★"; // 实星
-  favBtn.style.color = "gold"; // 变黄色
-} else {
-  favBtn.setAttribute("data-fav", "false");
-  favBtn.textContent = "☆"; // 空星
-  favBtn.style.color = "black"; // 黑色
+
+  getDoc(favRef)
+    .then((favSnap) => {
+      if (favSnap.exists()) {
+        favBtn.setAttribute("data-fav", "true");
+        favBtn.textContent = "★";           // 实星
+        favBtn.style.color = "gold";        // 变黄色
+      } else {
+        favBtn.setAttribute("data-fav", "false");
+        favBtn.textContent = "☆";           // 空星
+        favBtn.style.color = "black";       // 黑色
+      }
+    })
+    .catch((err) => {
+      console.error("❌ Error loading favorite status:", err);
+    });
 }
-    
-  }).catch((err) => {
-    console.error("❌ Error loading favorite status:", err);
+
+// ✅ 出价历史（仍在 forEach(product) 内）
+const historyEl = item.querySelector(`#history-${product.id}`);
+if (bids.length) {
+  bids.slice().reverse().forEach((b) => {
+    const li = document.createElement('li');
+    const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
+    li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
+    historyEl.appendChild(li);
   });
-}
-        
-        const historyEl = item.querySelector(`#history-${product.id}`);
-        if (bids.length) {
-          bids.slice().reverse().forEach(b => {
-   const li = document.createElement('li');
-  const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-  li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
+} else {
+  const li = document.createElement('li');
+  li.innerText = "No bids yet.";
   historyEl.appendChild(li);
+}
+
+// ✅ 会员判断（仍在 forEach(product) 内）
+const input = item.querySelector(`#input-${product.id}`);
+const btn   = item.querySelector('button');
+const errEl = item.querySelector(`#error-${product.id}`);
+
+if (!isMember) {
+  if (input) input.disabled = true;
+  if (btn)   btn.disabled   = true;
+  if (errEl) errEl.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
+} else {
+  if (input) input.disabled = false;
+  if (btn)   btn.disabled   = false;
+  if (errEl) errEl.innerHTML = '';
+}
+}); // ←←← 这里是 filtered.forEach(...) 的结束
+}   // ←←← 这里是 function renderProducts(filtered) 的结束
+
+// ✅ 初始渲染（在 renderProducts 定义之后）
+renderProducts(ongoing);
+
+// ✅ 搜索监听器（同样在 renderProducts 之后）
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const filtered = ongoing.filter(p =>
+    p.name?.toLowerCase().includes(keyword) ||
+    p.description?.toLowerCase().includes(keyword) ||
+    p.seller_name?.toLowerCase().includes(keyword) ||
+    p.seller_email?.toLowerCase().includes(keyword)
+  );
+  renderProducts(filtered);
 });
 
-        } else {
-          const li = document.createElement('li');
-          li.innerText = "No bids yet.";
-          historyEl.appendChild(li);
-        }
-
-        const input = item.querySelector(`#input-${product.id}`);
-        const btn = item.querySelector('button');
-        const err = item.querySelector(`#error-${product.id}`);
-
-        if (!isMember) {
-          input.disabled = true;
-          btn.disabled = true;
-          err.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
-        } else {
-          input.disabled = false;
-          btn.disabled = false;
-          err.innerHTML = '';
-        }
-      });
-    }
-
-    // ✅ 初始渲染
-    renderProducts(ongoing);
-
-    // ✅ 搜索监听器
-    searchInput.addEventListener("input", () => {
-      const keyword = searchInput.value.trim().toLowerCase();
-      const filtered = ongoing.filter(p =>
-        p.name?.toLowerCase().includes(keyword) ||
-        p.description?.toLowerCase().includes(keyword) ||
-        p.seller_name?.toLowerCase().includes(keyword) ||
-        p.seller_email?.toLowerCase().includes(keyword)
-      );
-      renderProducts(filtered);
-    });
 
   } catch (error) {
     console.error("❌ Error loading products:", error);
