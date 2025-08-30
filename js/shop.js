@@ -351,16 +351,19 @@ if (currentUser) {
 const historyEl = item.querySelector(`#history-${product.id}`);
 if (bids.length) {
   bids.slice().reverse().forEach((b) => {
-    const li = document.createElement('li');
+    const li   = document.createElement('li');
     const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-    li.innerText = `${b.bidder || 'Anonymous'} bid $${b.current_effective_bid || b.amount || 0} (max $${b.max_bid || b.amount || 0}) at ${date.toLocaleString()}`;
+    const eff  = (b.current_effective_bid ?? b.amount ?? 0);
+    const maxb = (b.max_bid ?? b.amount ?? 0);
+    li.textContent = `${b.bidder || 'Anonymous'} bid $${eff} (max $${maxb}) at ${date.toLocaleString()}`;
     historyEl.appendChild(li);
   });
 } else {
   const li = document.createElement('li');
-  li.innerText = "No bids yet.";
+  li.textContent = "No bids yet.";
   historyEl.appendChild(li);
 }
+
 
 // ✅ 会员判断（仍在 forEach(product) 内）
 const input = item.querySelector(`#input-${product.id}`);
