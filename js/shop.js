@@ -116,7 +116,6 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log("🔍 UID is:", user.uid);
 
-    currentUser = user;
     const emailSpan = document.getElementById("user-email");
     let prefix = "";
     let memberUntilText = "";
@@ -136,7 +135,6 @@ onAuthStateChanged(auth, async (user) => {
           const month = String(dateObj.getMonth() + 1).padStart(2, '0');
           const day = String(dateObj.getDate()).padStart(2, '0');
           memberUntilText = `(Member until: ${year}-${month}-${day})`;
-
         }
       } else {
         console.warn("⚠️ No membership document found for this user.");
@@ -145,35 +143,35 @@ onAuthStateChanged(auth, async (user) => {
       console.error("❌ Error checking membership:", e);
     }
 
-   if (emailSpan) {
-  tooltipText = memberUntilText ? `title="${memberUntilText.trim()}"` : "";
-  emailSpan.innerHTML = `${prefix}Welcome Back, <span ${tooltipText} style="text-decoration: underline dotted; cursor: help;">${user.email}</span>!`;
-}
+    if (emailSpan) {
+      tooltipText = memberUntilText ? `title="${memberUntilText.trim()}"` : "";
+      emailSpan.innerHTML =
+        `${prefix}Welcome Back, <span ${tooltipText} style="text-decoration: underline dotted; cursor: help;">${user.email}</span>!`;
+    }
 
-
-    console.log("✅ Current user:", currentUser?.email || "None");
+    console.log("✅ Current user:", user.email || "None");
     console.log("✅ Is member:", isMember);
 
-    // ✅ 只有登录后才加载产品
+    // 只有登录后才加载产品
     loadProducts();
-   } else {
-   } else {
-  console.warn("⚠️ User not logged in.");
-  // 这里不要再 const list 了，直接用顶部那个
-  list.innerHTML = `
-    <div style="text-align: center; margin-top: 3rem;">
-      <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
-      <p style="margin-top: 1.5rem; font-size: 1.1rem;">
-        Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
-      </p>
-      <p style="margin-top: 0.5rem; font-size: 1.1rem;">
-        Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
-      </p>
-    </div>
-  `;
-}
 
-}); 
+  } else {
+    console.warn("⚠️ User not logged in.");
+    // 这里不要再次 const list，直接用顶部的那个
+    list.innerHTML = `
+      <div style="text-align: center; margin-top: 3rem;">
+        <p style="color: red; font-size: 1.2rem; font-weight: bold;">❗ Please log in to view products.</p>
+        <p style="margin-top: 1.5rem; font-size: 1.1rem;">
+          Already Have An Account? <a href="/login" style="color: #007bff; text-decoration: underline;">Login now!</a>
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 1.1rem;">
+          Haven't Registered Yet? <a href="/signup" style="color: #007bff; text-decoration: underline;">Register For Free Now!</a>
+        </p>
+      </div>
+    `;
+  }
+});
+
 
 
 async function loadProducts() {
