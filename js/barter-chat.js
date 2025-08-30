@@ -1,7 +1,7 @@
 // /js/barter-chat.js
 // Buyer ↔ Seller chat for a product (barter-friendly), with file attachments
 
-import { db, auth } from "/js/firebase-config.js";
+import { db, auth, storage } from "/js/firebase-config.js"; // ← 多了 storage
 import {
   doc,
   getDoc,
@@ -16,11 +16,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import {
-  getStorage,
   ref as sRef,
   uploadBytes,
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
 
 /** ---------- DOM refs ---------- */
 const modal      = document.getElementById("barterChatModal");
@@ -244,10 +244,11 @@ async function sendMessage(text, offerCents) {
       hintEl.textContent = "Uploading attachment…";
       const MAX = 25 * 1024 * 1024;
       if (file.size > MAX) throw new Error("File too large (>25MB).");
-      const storage = getStorage();
-      const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
-      const ref  = sRef(storage, path);
-      await uploadBytes(ref, file);
+      
+ const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${file.name}`;
+ const ref  = sRef(storage, path); // ✅ 使用 firebase-config.js 里导出的 storage
+
+      await uploadBytes(ref, file, { contentType: file.type || "application/octet-stream" });
       const url = await getDownloadURL(ref);
       attachment = {
         url,
