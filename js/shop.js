@@ -193,209 +193,209 @@ async function loadProducts() {
     const searchInput = document.getElementById("search-input");
 
     // ✅ 渲染函数封装
-    function renderProducts(filtered) {
-      list.innerHTML = '';
-      filtered.forEach((product) => {
-        const endsAt = product.ends_at.seconds * 1000;
-        const timeLeft = endsAt - now;
-        const item = document.createElement('div');
-        item.className = 'product';
+  // ✅ 渲染函数（完整替换）
+function renderProducts(filtered) {
+  list.innerHTML = '';
 
-        const bids = product.bids || [];
-        const highest = bids.length === 0 ? 0 : (product.current_bid || product.starting_bid || 0);
+  filtered.forEach((product) => {
+    const endsAt  = product.ends_at.seconds * 1000;
+    const now     = Date.now();
+    const timeLeft = endsAt - now;
 
-item.innerHTML = `
-  <div style="text-align: right; font-size: 0.85rem; color: #666;">
-    ${
-      product.shipping_enabled && product.pickup_enabled
-        ? `Shipping & Pickup available (pickup at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
-        : product.shipping_enabled
-        ? `Shipping only<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
-        : product.pickup_enabled
-        ? `Pickup only (at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
-        : `No delivery options`
-    }
-  </div>
+    const item = document.createElement('div');
+    item.className = 'product';
 
-  <h2>${product.name}</h2>
-  <img src="${product.image_url}" alt="${product.name}" />
-  <p><strong>Starting Price:</strong> $${product.price}</p>
-  <p><strong>Current Bid:</strong> $${highest}</p>
-  <p>${product.description}</p>
-  <p><strong>Seller:</strong> ${product.seller_name}</p>
-  <p><strong>Seller Address:</strong> ${product.shipping_address?.city || 'Unknown'}, ${product.shipping_address?.province || 'Unknown'}, ${product.shipping_address?.country || 'Unknown'}</p>
-  <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
+    const bids    = product.bids || [];
+    const highest = bids.length === 0 ? 0 : (product.current_bid || product.starting_bid || 0);
 
-  <div class="bid-input">
-    <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
-    <button id="bid-btn-${product.id}" onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
-    <button id="fav-btn-${product.id}" class="fav-btn" data-fav="false" onclick="toggleFavorite('${product.id}')">☆</button>
-  </div>
-
-  <p class="error" id="error-${product.id}"></p>
-
-  <div class="history">
-    <a href="#" onclick="toggleHistory('${product.id}'); return false;">Show Bid History</a>
-    <ul id="history-${product.id}" style="display:none; margin-top:0.5rem;"></ul>
-  </div>
-`;
-
- list.appendChild(item);
-
-// ✅ 插入这段判断是否锁定
-if (product.barter_locked === true) {
-  const bidInput = item.querySelector(`#input-${product.id}`);
-  const bidBtn = item.querySelector(`#bid-btn-${product.id}`);
-
-  if (bidInput) bidInput.disabled = true;
-  if (bidBtn) {
-    bidBtn.disabled = true;
-    bidBtn.textContent = "🔒 Locked for Barter";
-    bidBtn.style.backgroundColor = "#ccc";
-    bidBtn.style.cursor = "not-allowed";
-  }
-
-  const lockNotice = document.createElement("p");
-  lockNotice.textContent = "🔒 This item is locked for a barter transaction.";
-  lockNotice.className = "text-sm text-red-600 font-medium mt-2";
-  item.appendChild(lockNotice);
-
-const barterBtn = document.createElement("button");
-barterBtn.textContent = "💬 Request Barter";
-barterBtn.className = "mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700";
-barterBtn.onclick = () => {
-  if (window.BarterChat?.openForProduct) {
-    window.BarterChat.openForProduct(product); // ← 用完整 product 对象
-  } else {
-    console.warn("Chat module not loaded. Ensure /js/barter-chat.js is included after shop.js.");
-    alert("Chat module not loaded.");
-  }
-};
-item.appendChild(barterBtn);
- 
-
-// 仅卖家可见：打印该商品的所有 barter 请求到控制台
-if (currentUser && currentUser.uid === product.seller_uid) {
-  const dbgBtn = document.createElement("button");
-  dbgBtn.textContent = "🧪 Console: Barter Requests";
-  dbgBtn.className = "mt-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800";
-  dbgBtn.onclick = () => window.debugListBarterRequests(product.id);
-  item.appendChild(dbgBtn);
-}
-
-
-// —— 卖家功能：查看并处理易货请求（按钮 + 弹窗）——
-if (currentUser && currentUser.uid === product.seller_uid) {
-  // 入口按钮
-  const viewBtn = document.createElement("button");
-  viewBtn.textContent = "🗂 View Barter Requests";
-  viewBtn.className = "mt-2 ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700";
-  viewBtn.onclick = () => window.showBarterRequests(product.id, product.name);
-  item.appendChild(viewBtn);
-
-  // 弹窗容器（每个商品一个，id 带上 productId）
-  const sellerModalHTML = `
-    <div id="barter-requests-modal-${product.id}"
-         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000;">
-      <div style="position:absolute; top:10%; left:50%; transform:translateX(-50%);
-                  width:min(900px, 92vw); background:#fff; border-radius:10px; padding:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h3 style="font-size:18px; font-weight:700;">Barter Requests – ${product.name}</h3>
-          <button onclick="document.getElementById('barter-requests-modal-${product.id}').style.display='none'"
-                  style="padding:4px 10px; border-radius:6px; background:#eee;">Close</button>
-        </div>
-        <div id="barter-requests-body-${product.id}" style="max-height:60vh; overflow:auto; border-top:1px solid #eee; padding-top:8px;">
-          <p style="color:#666; font-size:14px;">Loading…</p>
-        </div>
+    item.innerHTML = `
+      <div style="text-align: right; font-size: 0.85rem; color: #666;">
+        ${
+          product.shipping_enabled && product.pickup_enabled
+            ? `Shipping & Pickup available (pickup at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
+            : product.shipping_enabled
+            ? `Shipping only<br>Shipping Fee: $${product.shipping_fee?.toFixed(2) || '0.00'}`
+            : product.pickup_enabled
+            ? `Pickup only (at ${product.pickup_address?.city || 'Unknown'}, ${product.pickup_address?.province || 'Unknown'}, ${product.pickup_address?.country || 'Unknown'})`
+            : `No delivery options`
+        }
       </div>
-    </div>
-  `;
-  item.insertAdjacentHTML('beforeend', sellerModalHTML);
-}
 
-        
-startCountdown(
-  `cd-${product.id}`,
-  endsAt,
-  product.id,
-  product.current_bid || product.starting_bid || 0,
-  product.current_bidder || '',
-  product.bids || []
-);
-loadReviewsForProduct(product.seller_uid, product.id, item);
+      <h2>${product.name}</h2>
+      <img src="${product.image_url}" alt="${product.name}" />
+      <p><strong>Starting Price:</strong> $${product.price}</p>
+      <p><strong>Current Bid:</strong> $${highest}</p>
+      <p>${product.description}</p>
+      <p><strong>Seller:</strong> ${product.seller_name}</p>
+      <p><strong>Seller Address:</strong> ${product.shipping_address?.city || 'Unknown'}, ${product.shipping_address?.province || 'Unknown'}, ${product.shipping_address?.country || 'Unknown'}</p>
+      <p><strong>Ends in:</strong> <span class="countdown" id="cd-${product.id}">${formatCountdown(timeLeft)}</span></p>
 
-        
- // ✅ 收藏状态（这段代码放在 renderProducts 的 filtered.forEach(product) {...} 里面）
-if (currentUser) {
-  const favBtn = document.getElementById(`fav-btn-${product.id}`);
-  const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
+      <div class="bid-input">
+        <input type="number" placeholder="Enter your MAX bid..." id="input-${product.id}" />
+        <button id="bid-btn-${product.id}" onclick="placeBid('${product.id}', ${highest})">Place Bid</button>
+        <button id="fav-btn-${product.id}" class="fav-btn" data-fav="false" onclick="toggleFavorite('${product.id}')">☆</button>
+      </div>
 
-  getDoc(favRef)
-    .then((favSnap) => {
-      if (favSnap.exists()) {
-        favBtn.setAttribute("data-fav", "true");
-        favBtn.textContent = "★";           // 实星
-        favBtn.style.color = "gold";        // 变黄色
-      } else {
-        favBtn.setAttribute("data-fav", "false");
-        favBtn.textContent = "☆";           // 空星
-        favBtn.style.color = "black";       // 黑色
+      <p class="error" id="error-${product.id}"></p>
+
+      <div class="history">
+        <a href="#" onclick="toggleHistory('${product.id}'); return false;">Show Bid History</a>
+        <ul id="history-${product.id}" style="display:none; margin-top:0.5rem;"></ul>
+      </div>
+    `;
+
+    list.appendChild(item);
+
+    // 🔒 Barter 锁定时禁用出价 + 按钮
+    if (product.barter_locked === true) {
+      const bidInput = item.querySelector(`#input-${product.id}`);
+      const bidBtn   = item.querySelector(`#bid-btn-${product.id}`);
+      if (bidInput) bidInput.disabled = true;
+      if (bidBtn) {
+        bidBtn.disabled = true;
+        bidBtn.textContent = "🔒 Locked for Barter";
+        bidBtn.style.backgroundColor = "#ccc";
+        bidBtn.style.cursor = "not-allowed";
       }
-    })
-    .catch((err) => {
-      console.error("❌ Error loading favorite status:", err);
-    });
-}
 
-// ✅ 出价历史（仍在 forEach(product) 内）
-const historyEl = item.querySelector(`#history-${product.id}`);
-if (bids.length) {
-  bids.slice().reverse().forEach((b) => {
-    const li   = document.createElement('li');
-    const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
-    const eff  = (b.current_effective_bid ?? b.amount ?? 0);
-    const maxb = (b.max_bid ?? b.amount ?? 0);
-    li.textContent = `${b.bidder || 'Anonymous'} bid $${eff} (max $${maxb}) at ${date.toLocaleString()}`;
-    historyEl.appendChild(li);
-  });
-} else {
-  const li = document.createElement('li');
-  li.textContent = "No bids yet.";
-  historyEl.appendChild(li);
-}
+      const lockNotice = document.createElement("p");
+      lockNotice.textContent = "🔒 This item is locked for a barter transaction.";
+      lockNotice.className = "text-sm text-red-600 font-medium mt-2";
+      item.appendChild(lockNotice);
 
+      // Barter / Chat 按钮
+      const barterBtn = document.createElement("button");
+      barterBtn.textContent = "💬 Request Barter";
+      barterBtn.className = "mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700";
+      barterBtn.onclick = () => {
+        if (window.BarterChat?.openForProduct) {
+          window.BarterChat.openForProduct(product); // 传完整对象
+        } else {
+          console.warn("Chat module not loaded. Ensure /js/barter-chat.js is included after shop.js.");
+          alert("Chat module not loaded.");
+        }
+      };
+      item.appendChild(barterBtn);
+    }
 
-// ✅ 会员判断（仍在 forEach(product) 内）
-const input = item.querySelector(`#input-${product.id}`);
-const btn   = item.querySelector('button');
-const errEl = item.querySelector(`#error-${product.id}`);
+    // 卖家控制台按钮
+    if (currentUser && currentUser.uid === product.seller_uid) {
+      const dbgBtn = document.createElement("button");
+      dbgBtn.textContent = "🧪 Console: Barter Requests";
+      dbgBtn.className = "mt-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800";
+      dbgBtn.onclick = () => window.debugListBarterRequests(product.id);
+      item.appendChild(dbgBtn);
+    }
 
-if (!isMember) {
-  if (input) input.disabled = true;
-  if (btn)   btn.disabled   = true;
-  if (errEl) errEl.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
-} else {
-  if (input) input.disabled = false;
-  if (btn)   btn.disabled   = false;
-  if (errEl) errEl.innerHTML = '';
-}
-}); // ←←← 这里是 filtered.forEach(...) 的结束
-}   // ←←← 这里是 function renderProducts(filtered) 的结束
+    // 卖家查看请求弹窗
+    if (currentUser && currentUser.uid === product.seller_uid) {
+      const viewBtn = document.createElement("button");
+      viewBtn.textContent = "🗂 View Barter Requests";
+      viewBtn.className = "mt-2 ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700";
+      viewBtn.onclick = () => window.showBarterRequests(product.id, product.name);
+      item.appendChild(viewBtn);
 
-// ✅ 初始渲染（在 renderProducts 定义之后）
+      const sellerModalHTML = `
+        <div id="barter-requests-modal-${product.id}"
+             style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000;">
+          <div style="position:absolute; top:10%; left:50%; transform:translateX(-50%);
+                      width:min(900px, 92vw); background:#fff; border-radius:10px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="font-size:18px; font-weight:700;">Barter Requests – ${product.name}</h3>
+              <button onclick="document.getElementById('barter-requests-modal-${product.id}').style.display='none'"
+                      style="padding:4px 10px; border-radius:6px; background:#eee;">Close</button>
+            </div>
+            <div id="barter-requests-body-${product.id}" style="max-height:60vh; overflow:auto; border-top:1px solid #eee; padding-top:8px;">
+              <p style="color:#666; font-size:14px;">Loading…</p>
+            </div>
+          </div>
+        </div>
+      `;
+      item.insertAdjacentHTML('beforeend', sellerModalHTML);
+    }
+
+    // 倒计时 + 评价摘要
+    startCountdown(
+      `cd-${product.id}`,
+      endsAt,
+      product.id,
+      product.current_bid || product.starting_bid || 0,
+      product.current_bidder || '',
+      product.bids || []
+    );
+    loadReviewsForProduct(product.seller_uid, product.id, item);
+
+    // 收藏状态
+    if (currentUser) {
+      const favBtn = document.getElementById(`fav-btn-${product.id}`);
+      const favRef = doc(db, "users", currentUser.uid, "favorites", product.id);
+      getDoc(favRef)
+        .then((favSnap) => {
+          if (favSnap.exists()) {
+            favBtn.setAttribute("data-fav", "true");
+            favBtn.textContent = "★";
+            favBtn.style.color = "gold";
+          } else {
+            favBtn.setAttribute("data-fav", "false");
+            favBtn.textContent = "☆";
+            favBtn.style.color = "black";
+          }
+        })
+        .catch((err) => {
+          console.error("❌ Error loading favorite status:", err);
+        });
+    }
+
+    // 出价历史（避免长模板 + 反引号问题）
+    const historyEl = item.querySelector(`#history-${product.id}`);
+    if (bids.length) {
+      bids.slice().reverse().forEach((b) => {
+        const li   = document.createElement('li');
+        const date = new Date(b.timestamp?.seconds * 1000 || Date.now());
+        const eff  = (b.current_effective_bid ?? b.amount ?? 0);
+        const maxb = (b.max_bid ?? b.amount ?? 0);
+        li.textContent = `${b.bidder || 'Anonymous'} bid $${eff} (max $${maxb}) at ${date.toLocaleString()}`;
+        historyEl.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li');
+      li.textContent = "No bids yet.";
+      historyEl.appendChild(li);
+    }
+
+    // 会员判断
+    const input = item.querySelector(`#input-${product.id}`);
+    const btn   = item.querySelector('button');
+    const errEl = item.querySelector(`#error-${product.id}`);
+    if (!isMember) {
+      if (input) input.disabled = true;
+      if (btn)   btn.disabled   = true;
+      if (errEl) errEl.innerHTML = `<a href='/login'>Log in</a> / <a href='/signup'>Sign up</a> before bidding!`;
+    } else {
+      if (input) input.disabled = false;
+      if (btn)   btn.disabled   = false;
+      if (errEl) errEl.innerHTML = '';
+    }
+  }); // ← 结束 filtered.forEach(...)
+}   // ← 结束 function renderProducts(filtered)
+
+// ✅ 初始渲染
 renderProducts(ongoing);
 
-// ✅ 搜索监听器（同样在 renderProducts 之后）
-searchInput.addEventListener("input", () => {
-  const keyword = searchInput.value.trim().toLowerCase();
-  const filtered = ongoing.filter(p =>
-    p.name?.toLowerCase().includes(keyword) ||
-    p.description?.toLowerCase().includes(keyword) ||
-    p.seller_name?.toLowerCase().includes(keyword) ||
-    p.seller_email?.toLowerCase().includes(keyword)
-  );
-  renderProducts(filtered);
-});
+// ✅ 搜索监听器
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    const keyword = searchInput.value.trim().toLowerCase();
+    const filtered = ongoing.filter(p =>
+      p.name?.toLowerCase().includes(keyword) ||
+      p.description?.toLowerCase().includes(keyword) ||
+      p.seller_name?.toLowerCase().includes(keyword) ||
+      p.seller_email?.toLowerCase().includes(keyword)
+    );
+    renderProducts(filtered);
+  });
+}
+
 
 
   } catch (error) {
