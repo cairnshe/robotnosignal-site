@@ -175,38 +175,39 @@ async function ensureThread(product) {
   const sellerUid = product.seller_uid;
   const buyerUid  = currentUser.uid;
 
- // 🚨 新增的检查（就在这里）
+  // 可留着这层保护：卖家不要从“买家入口”发起新线程
   if (currentUser.uid === sellerUid) {
-    // 卖家不应该自己发起新线程
     throw new Error("As the seller, please use 'View Barter Requests' to chat with buyers.");
   }
-  
+
   const threadId  = computeThreadId(productId, buyerUid, sellerUid);
   const threadRef = doc(db, "barter_threads", threadId);
-  const snap      = await getDoc(threadRef);
 
-  if (!snap.exists()) {
-    const base = {
-      product_id: productId,
-      product_name: product.name || "",
-      product_image: product.image_url || "",
-      buyer_uid: buyerUid,
-      seller_uid: sellerUid,
-      buyer_email: currentUser.email || "",
-      seller_email: product.seller_email || "",
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
-      last_message: "",
-      last_sender_uid: "",
-      last_extra_cents: 0,
-      last_message_at: serverTimestamp(),
-      participants: [buyerUid, sellerUid],
-    };
-    await setDoc(threadRef, base);
-    return { id: threadId, ...base };
-  }
-  return { id: threadId, ...snap.data() };
+  // 不要先 getDoc()！直接用 setDoc(..., { merge:true }) 创建或更新
+  const base = {
+    product_id: productId,
+    product_name: product.name || "",
+    product_image: product.image_url || "",
+    buyer_uid: buyerUid,
+    seller_uid: sellerUid,
+    buyer_email: currentUser.email || "",
+    seller_email: product.seller_email || "",
+    participants: [buyerUid, sellerUid],
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+    last_message: "",
+    last_sender_uid: "",
+    last_extra_cents: 0,
+    last_message_at: serverTimestamp(),
+  };
+
+  // 若文档不存在 → 创建；若已存在 → 合并（你是参与者，update 也允许）
+  await setDoc(threadRef, base, { merge: true });
+
+  // 这里不再立即读回，后续用 threadId 就足够；需要的话也可以再 get，但没必要
+  return { id: threadId, ...base };
 }
+
 
 /** 订阅消息 */
 function subscribeMessages(thread) {
