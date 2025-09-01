@@ -1,7 +1,7 @@
 // /js/barter-chat.js
 // Buyer ↔ Seller chat for a product (barter-friendly), with file attachments
 
-import { db, auth, storage } from "/js/firebase-config.js"; // ← 多了 storage
+import { db, auth, storage } from "/js/firebase-config.js";
 import {
   doc,
   getDoc,
@@ -21,13 +21,12 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-
 /** ---------- DOM refs ---------- */
 const modal      = document.getElementById("barterChatModal");
 const titleEl    = document.getElementById("barterChatTitle");
 const infoEl     = document.getElementById("barterChatProductInfo");
 const listEl     = document.getElementById("barterChatMessages");
-const offerInput = document.getElementById("barterOfferInput"); // text + inputmode=decimal
+const offerInput = document.getElementById("barterOfferInput");
 const textInput  = document.getElementById("barterTextInput");
 const fileInput  = document.getElementById("barterFileInput");
 const hintEl     = document.getElementById("barterChatHint");
@@ -76,7 +75,6 @@ function parseOfferToCents(input) {
     s = s.replace(",", ".");
   }
 
-  // 只保留 [-]?[0-9]+(.[0-9]{0,})?
   const m = s.match(/-?\d+(\.\d+)?/);
   if (!m) return 0;
 
@@ -85,7 +83,6 @@ function parseOfferToCents(input) {
 
   // 仅允许非负
   const dollars = Math.max(0, val);
-  // 转 cents（四舍五入到两位）
   return Math.round(dollars * 100);
 }
 
@@ -169,13 +166,15 @@ function computeThreadId(productId, buyerUid, sellerUid) {
   return `${productId}_${pair}`;
 }
 
-/** 确保线程存在；若没有则创建 */
+/** 确保线程存在；若没有则创建
+ * 注意：为配合你的 Firestore 规则（限制 update 字段），
+ * - 如果已存在：不再用 merge 覆盖不在白名单的字段，避免权限拒绝。
+ */
 async function ensureThread(product) {
   const productId = product.id;
   const sellerUid = product.seller_uid;
   const buyerUid  = currentUser.uid;
 
-  // 可留着这层保护：卖家不要从“买家入口”发起新线程
   if (currentUser.uid === sellerUid) {
     throw new Error("As the seller, please use 'View Barter Requests' to chat with buyers.");
   }
@@ -183,31 +182,35 @@ async function ensureThread(product) {
   const threadId  = computeThreadId(productId, buyerUid, sellerUid);
   const threadRef = doc(db, "barter_threads", threadId);
 
-  // 不要先 getDoc()！直接用 setDoc(..., { merge:true }) 创建或更新
-  const base = {
-    product_id: productId,
-    product_name: product.name || "",
-    product_image: product.image_url || "",
-    buyer_uid: buyerUid,
-    seller_uid: sellerUid,
-    buyer_email: currentUser.email || "",
-    seller_email: product.seller_email || "",
-    participants: [buyerUid, sellerUid],
-    created_at: serverTimestamp(),
-    updated_at: serverTimestamp(),
-    last_message: "",
-    last_sender_uid: "",
-    last_extra_cents: 0,
-    last_message_at: serverTimestamp(),
-  };
-
-  // 若文档不存在 → 创建；若已存在 → 合并（你是参与者，update 也允许）
-  await setDoc(threadRef, base, { merge: true });
-
-  // 这里不再立即读回，后续用 threadId 就足够；需要的话也可以再 get，但没必要
-  return { id: threadId, ...base };
+  const snap = await getDoc(threadRef);
+  if (!snap.exists()) {
+    // 创建：允许写入全量初始字段
+    const base = {
+      product_id: productId,
+      product_name: product.name || "",
+      product_image: product.image_url || "",
+      buyer_uid: buyerUid,
+      seller_uid: sellerUid,
+      buyer_email: currentUser.email || "",
+      seller_email: product.seller_email || "",
+      participants: [buyerUid, sellerUid],
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+      last_message: "",
+      last_sender_uid: "",
+      last_extra_cents: 0,
+      last_message_at: serverTimestamp(),
+      status: "open"
+    };
+    await setDoc(threadRef, base);
+    return { id: threadId, ...base };
+  } else {
+    // 已存在：不要 merge 覆盖其它字段，避免触发受限 update。
+    // 如需刷新更新时间，可仅更新允许字段：
+    await updateDoc(threadRef, { updated_at: serverTimestamp() });
+    return { id: threadId, ...snap.data() };
+  }
 }
-
 
 /** 订阅消息 */
 function subscribeMessages(thread) {
@@ -252,11 +255,10 @@ async function sendMessage(text, offerCents) {
       hintEl.textContent = "Uploading attachment…";
       const MAX = 25 * 1024 * 1024;
       if (file.size > MAX) throw new Error("File too large (>25MB).");
-      
-const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${safeName}`;
 
- const ref  = sRef(storage, path); // ✅ 使用 firebase-config.js 里导出的 storage
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${safeName}`;
+      const ref  = sRef(storage, path);
 
       await uploadBytes(ref, file, { contentType: file.type || "application/octet-stream" });
       const url = await getDownloadURL(ref);
@@ -270,7 +272,7 @@ const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.n
 
     const payload = {
       text: (text || "").trim(),
-      offer_extra_cents: typeof offerCents === "number" ? offerCents : 0, // ← 与规则对齐
+      offer_extra_cents: typeof offerCents === "number" ? offerCents : 0,
       sender_uid: currentUser.uid,
       sender_email: currentUser.email || "",
       created_at: serverTimestamp(),
@@ -280,6 +282,7 @@ const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.n
     const msgsCol = collection(db, "barter_threads", currentThread.id, "messages");
     await addDoc(msgsCol, payload);
 
+    // 更新线程摘要（仅白名单字段）
     await updateDoc(doc(db, "barter_threads", currentThread.id), {
       updated_at: serverTimestamp(),
       last_message: payload.text
@@ -290,13 +293,11 @@ const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.n
       last_message_at: serverTimestamp()
     });
 
-    // 清空输入
     if (fileInput) fileInput.value = "";
     hintEl.textContent = "Sent.";
     setTimeout(() => { hintEl.textContent = ""; }, 1200);
   } catch (err) {
     console.error("send error:", err);
-    // Storage 常见错误提示
     if (String(err?.message || "").includes("retry-limit")) {
       alert("Firebase Storage: Retry limit exceeded. Please try again in a moment.");
     } else {
@@ -347,7 +348,7 @@ async function openForProduct(productOrId) {
     const sellerUid = product.seller_uid;
     if (!sellerUid) { alert("Seller not found on this product."); return; }
 
-    // 2) 确保 thread
+    // 2) 确保 thread（已改为：存在则仅刷新 updated_at；不存在才创建）
     currentThread = await ensureThread(product);
 
     // 3) UI
@@ -406,7 +407,7 @@ sendBtn?.addEventListener("click", async () => {
 
   const text = (textInput.value || "").trim();
   const extraRaw = (offerInput.value || "").trim();
-  const offerCents = parseOfferToCents(extraRaw); // 统一转 cents
+  const offerCents = parseOfferToCents(extraRaw);
   const hasFile = Boolean(fileInput?.files?.length);
 
   if (!text && offerCents <= 0 && !hasFile) {
@@ -416,8 +417,6 @@ sendBtn?.addEventListener("click", async () => {
 
   await sendMessage(text, offerCents);
   textInput.value = "";
-  // 是否清空金额由你决定；这里保留输入，便于连续报价
-  // offerInput.value = "";
   await sleep(50);
   scrollToBottom();
 });
