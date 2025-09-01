@@ -203,14 +203,24 @@ async function ensureThread(product) {
       status: "open"
     };
     await setDoc(threadRef, base);
+
+    // 👉 打印 + 暴露 threadId（用于和 Storage 规则对齐排查）
+    console.log("[barter] created threadId =", threadId);
+    window.__threadId = threadId;
+
     return { id: threadId, ...base };
   } else {
     // 已存在：不要 merge 覆盖其它字段，避免触发受限 update。
-    // 如需刷新更新时间，可仅更新允许字段：
     await updateDoc(threadRef, { updated_at: serverTimestamp() });
+
+    // 👉 打印 + 暴露 threadId（用于和 Storage 规则对齐排查）
+    console.log("[barter] existing threadId =", threadId);
+    window.__threadId = threadId;
+
     return { id: threadId, ...snap.data() };
   }
 }
+
 
 /** 订阅消息 */
 function subscribeMessages(thread) {
@@ -258,8 +268,10 @@ async function sendMessage(text, offerCents) {
 
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
       const path = `barter_attachments/${currentThread.id}/${currentUser.uid}_${Date.now()}_${safeName}`;
-      const ref  = sRef(storage, path);
+      // 👉 打印上传路径与 threadId，便于和 Storage 规则对齐
+      console.log("[barter] upload path =", path, "threadId =", currentThread.id);
 
+      const ref  = sRef(storage, path);
       await uploadBytes(ref, file, { contentType: file.type || "application/octet-stream" });
       const url = await getDownloadURL(ref);
       attachment = {
@@ -310,6 +322,7 @@ async function sendMessage(text, offerCents) {
   }
 }
 
+
 /** ---------- UI open/close ---------- */
 function openModal() {
   modal.classList.remove("hidden");
@@ -348,8 +361,12 @@ async function openForProduct(productOrId) {
     const sellerUid = product.seller_uid;
     if (!sellerUid) { alert("Seller not found on this product."); return; }
 
-    // 2) 确保 thread（已改为：存在则仅刷新 updated_at；不存在才创建）
+    // 2) 确保 thread
     currentThread = await ensureThread(product);
+
+    // 👉 再打印一次，确认与 Storage 路径一致
+    console.log("[barter] currentThread.id =", currentThread.id);
+    window.__threadId = currentThread.id;
 
     // 3) UI
     titleEl.textContent = "Barter Chat";
