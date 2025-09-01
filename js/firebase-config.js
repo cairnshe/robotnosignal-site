@@ -14,7 +14,7 @@ const firebaseConfig = {
   authDomain: "robot-no-signal.firebaseapp.com",
   projectId: "robot-no-signal",
   // ✅ 必须有；与你控制台 Storage 显示一致即可
-  storageBucket: "robot-no-signal.appspot.com",
+  storageBucket: "robot-no-signal.firebasestorage.app",
   messagingSenderId: "485194816357",
   appId: "1:485194816357:web:fc33550bd299927266df8c",
   measurementId: "G-QQRM0D4RB9"
